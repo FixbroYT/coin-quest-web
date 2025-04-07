@@ -8,10 +8,21 @@ const PlayerProfile = () => {
   const { gameState } = useGameContext();
   const { player, locations } = gameState;
   
+  if (!player) {
+    return (
+      <div className="flex flex-col gap-4 py-4">
+        <p>Loading player profile...</p>
+      </div>
+    );
+  }
+  
   // Calculate progress metrics
   const totalLocations = locations.length;
-  const unlockedLocations = player.unlockedLocations.length;
-  const locationsProgress = (unlockedLocations / totalLocations) * 100;
+  const unlockedLocations = locations.filter(l => l.is_unlocked).length;
+  const locationsProgress = totalLocations > 0 ? (unlockedLocations / totalLocations) * 100 : 0;
+  
+  // Find current location
+  const currentLocation = locations.find(loc => loc.id === player.current_location);
   
   return (
     <div className="flex flex-col gap-4 py-4">
@@ -20,7 +31,7 @@ const PlayerProfile = () => {
           <User className="w-8 h-8 text-primary" />
         </div>
         <div>
-          <h3 className="text-lg font-semibold">{player.name}</h3>
+          <h3 className="text-lg font-semibold">Player #{player.tg_id}</h3>
           <p className="text-sm text-muted-foreground">Coin Collector</p>
         </div>
       </div>
@@ -33,9 +44,9 @@ const PlayerProfile = () => {
           <div className="flex justify-between">
             <div className="flex items-center gap-2">
               <Coins className="w-4 h-4 text-yellow-500" />
-              <span className="text-sm">Total Earned</span>
+              <span className="text-sm">Coins</span>
             </div>
-            <span className="font-medium">{Math.floor(player.totalEarned).toLocaleString()}</span>
+            <span className="font-medium">{Math.floor(player.coins).toLocaleString()}</span>
           </div>
           
           <div className="flex justify-between">
@@ -43,7 +54,7 @@ const PlayerProfile = () => {
               <Zap className="w-4 h-4 text-blue-500" />
               <span className="text-sm">Click Power</span>
             </div>
-            <span className="font-medium">{player.clickPower}</span>
+            <span className="font-medium">{player.click_power}</span>
           </div>
           
           <div className="space-y-1">
@@ -64,7 +75,7 @@ const PlayerProfile = () => {
           <CardTitle className="text-base">Current Location</CardTitle>
         </CardHeader>
         <CardContent>
-          {locations.find(loc => loc.id === player.currentLocation)?.name || "Unknown"}
+          {currentLocation?.name || "Unknown"}
         </CardContent>
       </Card>
     </div>

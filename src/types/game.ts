@@ -1,36 +1,36 @@
 
 export interface Player {
-  id: string;
+  id: number;
+  tg_id: number;
   name: string;
-  balance: number;
-  totalEarned: number;
-  clickPower: number;
-  unlockedLocations: string[];
-  currentLocation: string;
+  coins: number;
+  total_earned: number;
+  click_power: number;
+  current_location: number;
 }
 
 export interface Upgrade {
-  id: string;
+  id: number;
   name: string;
   description: string;
-  baseCost: number;
-  currentLevel: number;
-  coinMultiplier: number;
+  base_cost: number;
+  current_level: number;
+  coin_multiplier: number;
   icon: string;
 }
 
 export interface Location {
-  id: string;
+  id: number;
   name: string;
   description: string;
-  unlockCost: number;
-  coinMultiplier: number;
+  unlock_cost: number;
+  coin_multiplier: number;
   background: string;
-  isUnlocked: boolean;
+  is_unlocked: boolean;
 }
 
 export interface GameState {
-  player: Player;
+  player: Player | null;
   upgrades: Upgrade[];
   locations: Location[];
   isBottomPanelOpen: boolean;

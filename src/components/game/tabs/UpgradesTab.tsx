@@ -7,6 +7,11 @@ import { Zap, MousePointerClick, Coins } from "lucide-react";
 
 const UpgradesTab = () => {
   const { gameState, purchaseUpgrade } = useGameContext();
+  const { upgrades, player } = gameState;
+  
+  if (!player) {
+    return <div>Loading upgrades...</div>;
+  }
   
   const getUpgradeIcon = (iconName: string) => {
     switch (iconName) {
@@ -25,9 +30,9 @@ const UpgradesTab = () => {
       <p className="text-sm text-muted-foreground">Improve your coin collection efficiency</p>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {gameState.upgrades.map(upgrade => {
-          const cost = upgrade.baseCost * Math.pow(1.5, upgrade.currentLevel);
-          const canAfford = gameState.player.balance >= cost;
+        {upgrades.map(upgrade => {
+          const cost = upgrade.base_cost * Math.pow(1.5, upgrade.current_level);
+          const canAfford = player.coins >= cost;
           
           return (
             <Card key={upgrade.id} className={`${canAfford ? "" : "opacity-70"}`}>
@@ -48,9 +53,9 @@ const UpgradesTab = () => {
                 <div className="space-y-1">
                   <div className="flex justify-between text-sm">
                     <span>Level</span>
-                    <span>{upgrade.currentLevel}</span>
+                    <span>{upgrade.current_level}</span>
                   </div>
-                  <Progress value={upgrade.currentLevel % 10 * 10} className="h-2" />
+                  <Progress value={upgrade.current_level % 10 * 10} className="h-2" />
                 </div>
               </CardContent>
               <CardFooter className="pt-0">
@@ -60,7 +65,7 @@ const UpgradesTab = () => {
                   className="w-full"
                   variant={canAfford ? "default" : "outline"}
                 >
-                  {upgrade.currentLevel === 0 ? "Purchase" : "Upgrade"}
+                  {upgrade.current_level === 0 ? "Purchase" : "Upgrade"}
                 </Button>
               </CardFooter>
             </Card>

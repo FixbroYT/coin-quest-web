@@ -7,6 +7,11 @@ import { Coins, MapPin, Check } from "lucide-react";
 
 const LocationsTab = () => {
   const { gameState, unlockLocation } = useGameContext();
+  const { locations, player } = gameState;
+  
+  if (!player) {
+    return <div>Loading locations...</div>;
+  }
   
   return (
     <div className="space-y-4">
@@ -14,17 +19,17 @@ const LocationsTab = () => {
       <p className="text-sm text-muted-foreground">Discover new places to collect coins</p>
       
       <div className="grid grid-cols-1 gap-4">
-        {gameState.locations.map(location => {
-          const isUnlocked = location.isUnlocked;
-          const isCurrent = gameState.player.currentLocation === location.id;
-          const canAfford = gameState.player.balance >= location.unlockCost;
+        {locations.map(location => {
+          const isUnlocked = location.is_unlocked;
+          const isCurrent = player.current_location === location.id;
+          const canAfford = player.coins >= location.unlock_cost;
           
           return (
             <Card 
               key={location.id} 
               className={`${isUnlocked ? "" : "opacity-70"} overflow-hidden`}
             >
-              <div className={`h-20 ${location.background}`}></div>
+              <div className={`h-20 ${location.background || "bg-gradient-to-br from-blue-100 to-blue-200"}`}></div>
               <CardHeader className="pb-2">
                 <div className="flex justify-between items-start">
                   <CardTitle className="text-base flex items-center gap-2">
@@ -39,7 +44,7 @@ const LocationsTab = () => {
                   {!isUnlocked && (
                     <div className="text-amber-500 font-medium text-sm flex items-center gap-1">
                       <Coins className="w-3 h-3" />
-                      {location.unlockCost}
+                      {location.unlock_cost}
                     </div>
                   )}
                   {isUnlocked && (
@@ -53,7 +58,7 @@ const LocationsTab = () => {
               </CardHeader>
               <CardContent className="pb-2">
                 <div className="text-sm">
-                  Coin multiplier: x{location.coinMultiplier}
+                  Coin multiplier: x{location.coin_multiplier}
                 </div>
               </CardContent>
               <CardFooter className="pt-0">

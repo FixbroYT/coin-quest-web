@@ -1,9 +1,8 @@
 
 import axios from 'axios';
-import { GameState } from '@/types/game';
 
 // Define the API base URL - replace with your actual FastAPI endpoint
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 // Create axios instance
 const api = axios.create({
@@ -15,36 +14,91 @@ const api = axios.create({
 
 // API functions
 export const apiService = {
-  // Save game state to server
-  saveGameState: async (gameState: GameState): Promise<boolean> => {
+  // Get user data by Telegram ID
+  getUserData: async (tgId: number) => {
     try {
-      const response = await api.post('/save-game', gameState);
-      return response.status === 200;
-    } catch (error) {
-      console.error('Error saving game state:', error);
-      return false;
-    }
-  },
-
-  // Load game state from server
-  loadGameState: async (playerId: string): Promise<GameState | null> => {
-    try {
-      const response = await api.get(`/load-game/${playerId}`);
+      const response = await api.get(`/users/${tgId}`);
       return response.data;
     } catch (error) {
-      console.error('Error loading game state:', error);
+      console.error('Error fetching user data:', error);
       return null;
     }
   },
-
-  // Update player balance
-  updateBalance: async (playerId: string, balance: number): Promise<boolean> => {
+  
+  // Get all available upgrades
+  getUpgrades: async () => {
     try {
-      const response = await api.post('/update-balance', { playerId, balance });
-      return response.status === 200;
+      const response = await api.get('/upgrades');
+      return response.data;
     } catch (error) {
-      console.error('Error updating balance:', error);
-      return false;
+      console.error('Error fetching upgrades:', error);
+      return [];
+    }
+  },
+  
+  // Buy an upgrade for a user
+  buyUpgrade: async (tgId: number, upgradeId: number) => {
+    try {
+      const response = await api.post(`/users/${tgId}/buy_upgrade/${upgradeId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error buying upgrade:', error);
+      return null;
+    }
+  },
+  
+  // Get all available locations
+  getLocations: async () => {
+    try {
+      const response = await api.get('/locations');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching locations:', error);
+      return [];
+    }
+  },
+  
+  // Buy a location for a user
+  buyLocation: async (tgId: number, locationId: number) => {
+    try {
+      const response = await api.post(`/users/${tgId}/buy_location/${locationId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error buying location:', error);
+      return null;
+    }
+  },
+  
+  // Set current location for a user
+  setLocation: async (tgId: number, locationId: number) => {
+    try {
+      const response = await api.post(`/users/${tgId}/set_location/${locationId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error setting location:', error);
+      return null;
+    }
+  },
+  
+  // Create a new user
+  createUser: async (tgId: number) => {
+    try {
+      const response = await api.post('/api/users/create', { tg_id: tgId });
+      return response.data;
+    } catch (error) {
+      console.error('Error creating user:', error);
+      return null;
+    }
+  },
+  
+  // Add balance to user
+  addBalance: async (tgId: number, coins: number) => {
+    try {
+      const response = await api.post(`/api/users/${tgId}/balance/add`, { coins });
+      return response.data;
+    } catch (error) {
+      console.error('Error adding balance:', error);
+      return null;
     }
   }
 };

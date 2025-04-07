@@ -1,252 +1,239 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { GameState, Upgrade, Location, Player } from "@/types/game";
 import { Coins, Map } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { apiService } from "@/services/apiService";
 
-// Initial game state
-const initialPlayer: Player = {
-  id: "player1",
-  name: "Player",
-  balance: 0,
-  totalEarned: 0,
-  clickPower: 1,
-  unlockedLocations: ["home"],
-  currentLocation: "home"
-};
+// Types
+interface Player {
+  id: number;
+  tg_id: number;
+  name: string;
+  coins: number;
+  total_earned: number;
+  click_power: number;
+  current_location: number;
+}
 
-const initialUpgrades: Upgrade[] = [
-  {
-    id: "click-power",
-    name: "Click Power",
-    description: "Increase coins per click",
-    baseCost: 10,
-    currentLevel: 0,
-    coinMultiplier: 1,
-    icon: "zap"
-  },
-  {
-    id: "auto-clicker",
-    name: "Auto Clicker",
-    description: "Automatically clicks for you",
-    baseCost: 50,
-    currentLevel: 0,
-    coinMultiplier: 0.2,
-    icon: "mouse-pointer-click"
-  }
-];
+interface Upgrade {
+  id: number;
+  name: string;
+  description: string;
+  base_cost: number;
+  current_level: number;
+  coin_multiplier: number;
+  icon: string;
+}
 
-const initialLocations: Location[] = [
-  {
-    id: "home",
-    name: "Home",
-    description: "Your starting location",
-    unlockCost: 0,
-    coinMultiplier: 1,
-    background: "bg-gradient-to-br from-blue-100 to-blue-200",
-    isUnlocked: true
-  },
-  {
-    id: "garden",
-    name: "Garden",
-    description: "A peaceful garden with more coins",
-    unlockCost: 100,
-    coinMultiplier: 1.5,
-    background: "bg-gradient-to-br from-green-100 to-green-300",
-    isUnlocked: false
-  },
-  {
-    id: "mine",
-    name: "Gold Mine",
-    description: "Rich in resources",
-    unlockCost: 500,
-    coinMultiplier: 2,
-    background: "bg-gradient-to-br from-amber-100 to-amber-300",
-    isUnlocked: false
-  }
-];
+interface Location {
+  id: number;
+  name: string;
+  description: string;
+  unlock_cost: number;
+  coin_multiplier: number;
+  background: string;
+  is_unlocked: boolean;
+}
 
-const initialGameState: GameState = {
-  player: initialPlayer,
-  upgrades: initialUpgrades,
-  locations: initialLocations,
-  isBottomPanelOpen: false,
-  activeTab: "upgrades"
-};
+interface GameState {
+  player: Player | null;
+  upgrades: Upgrade[];
+  locations: Location[];
+  isBottomPanelOpen: boolean;
+  activeTab: "upgrades" | "locations";
+}
 
 interface GameContextProps {
   gameState: GameState;
   addCoins: (amount: number) => void;
-  purchaseUpgrade: (upgradeId: string) => void;
-  unlockLocation: (locationId: string) => void;
-  setCurrentLocation: (locationId: string) => void;
+  purchaseUpgrade: (upgradeId: number) => void;
+  unlockLocation: (locationId: number) => void;
+  setCurrentLocation: (locationId: number) => void;
   toggleBottomPanel: () => void;
   setActiveTab: (tab: "upgrades" | "locations") => void;
+  initializeUser: (tgId: number) => Promise<void>;
 }
+
+const initialGameState: GameState = {
+  player: null,
+  upgrades: [],
+  locations: [],
+  isBottomPanelOpen: false,
+  activeTab: "upgrades"
+};
 
 const GameContext = createContext<GameContextProps | undefined>(undefined);
 
 export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [gameState, setGameState] = useState<GameState>(initialGameState);
   const { toast } = useToast();
+  const [telegramId, setTelegramId] = useState<number | null>(null);
   
-  // Auto-save game state to localStorage
+  // Initialize the game with user data from Telegram WebApp
   useEffect(() => {
-    const savedState = localStorage.getItem("coinQuestGameState");
-    if (savedState) {
-      try {
-        setGameState(JSON.parse(savedState));
-      } catch (error) {
-        console.error("Failed to load saved game state:", error);
+    // Check if Telegram WebApp is available
+    if (window.Telegram?.WebApp) {
+      const tg = window.Telegram.WebApp;
+      // Init Telegram WebApp
+      tg.expand();
+      tg.ready();
+      
+      // Get user data
+      const user = tg.initDataUnsafe?.user;
+      if (user && user.id) {
+        setTelegramId(user.id);
+        initializeUser(user.id);
       }
+      
+      console.log("Telegram WebApp initialized");
+    } else {
+      console.log("Running outside of Telegram WebApp");
+      // For testing purposes, use a mock ID
+      const mockId = 12345;
+      setTelegramId(mockId);
+      initializeUser(mockId);
     }
   }, []);
-
-  // Save game state to localStorage whenever it changes
-  useEffect(() => {
-    localStorage.setItem("coinQuestGameState", JSON.stringify(gameState));
-  }, [gameState]);
-
-  // Auto-clicker effect
-  useEffect(() => {
-    const autoClickerUpgrade = gameState.upgrades.find(u => u.id === "auto-clicker");
-    if (autoClickerUpgrade && autoClickerUpgrade.currentLevel > 0) {
-      const coinsPerSecond = autoClickerUpgrade.currentLevel * autoClickerUpgrade.coinMultiplier;
-      const interval = setInterval(() => {
-        addCoins(coinsPerSecond);
-      }, 1000);
-      
-      return () => clearInterval(interval);
-    }
-  }, [gameState.upgrades]);
-
-  const addCoins = (amount: number) => {
-    const currentLocation = gameState.locations.find(
-      l => l.id === gameState.player.currentLocation
-    );
+  
+  // Load game data
+  const initializeUser = async (tgId: number) => {
+    // Try to get user
+    let userData = await apiService.getUserData(tgId);
     
-    const locationMultiplier = currentLocation ? currentLocation.coinMultiplier : 1;
-    const actualAmount = amount * locationMultiplier;
-    
-    setGameState(prevState => ({
-      ...prevState,
-      player: {
-        ...prevState.player,
-        balance: prevState.player.balance + actualAmount,
-        totalEarned: prevState.player.totalEarned + actualAmount
+    // If user doesn't exist, create a new one
+    if (!userData) {
+      await apiService.createUser(tgId);
+      userData = await apiService.getUserData(tgId);
+      if (!userData) {
+        toast({
+          title: "Error",
+          description: "Failed to initialize user",
+          variant: "destructive"
+        });
+        return;
       }
-    }));
-  };
-
-  const purchaseUpgrade = (upgradeId: string) => {
-    const upgradeIndex = gameState.upgrades.findIndex(u => u.id === upgradeId);
-    if (upgradeIndex === -1) return;
-
-    const upgrade = gameState.upgrades[upgradeIndex];
-    const cost = upgrade.baseCost * Math.pow(1.5, upgrade.currentLevel);
-
-    if (gameState.player.balance >= cost) {
-      // Update player balance
-      const newBalance = gameState.player.balance - cost;
-      
-      // Update upgrade level
-      const newUpgrades = [...gameState.upgrades];
-      newUpgrades[upgradeIndex] = {
-        ...upgrade,
-        currentLevel: upgrade.currentLevel + 1
-      };
-
-      // Update click power if it's the click power upgrade
-      let newClickPower = gameState.player.clickPower;
-      if (upgradeId === "click-power") {
-        newClickPower += 1;
-      }
-
-      setGameState(prevState => ({
-        ...prevState,
-        player: {
-          ...prevState.player,
-          balance: newBalance,
-          clickPower: newClickPower
-        },
-        upgrades: newUpgrades
-      }));
-
-      toast({
-        title: "Upgrade Purchased!",
-        description: `You've upgraded ${upgrade.name} to level ${upgrade.currentLevel + 1}.`
-      });
-    } else {
-      toast({
-        title: "Not enough coins",
-        description: `You need ${cost} coins to purchase this upgrade.`,
-        variant: "destructive"
-      });
     }
-  };
-
-  const unlockLocation = (locationId: string) => {
-    const locationIndex = gameState.locations.findIndex(l => l.id === locationId);
-    if (locationIndex === -1) return;
-
-    const location = gameState.locations[locationIndex];
     
-    if (gameState.player.balance >= location.unlockCost && !location.isUnlocked) {
-      const newBalance = gameState.player.balance - location.unlockCost;
-      
-      const newLocations = [...gameState.locations];
-      newLocations[locationIndex] = {
-        ...location,
-        isUnlocked: true
-      };
-
-      const newUnlockedLocations = [...gameState.player.unlockedLocations, locationId];
-
-      setGameState(prevState => ({
-        ...prevState,
-        player: {
-          ...prevState.player,
-          balance: newBalance,
-          unlockedLocations: newUnlockedLocations,
-          currentLocation: locationId
-        },
-        locations: newLocations
-      }));
-
-      toast({
-        title: "New Location Unlocked!",
-        description: `You've unlocked ${location.name}. Enjoy the new scenery!`
-      });
-    } else if (location.isUnlocked) {
-      setCurrentLocation(locationId);
-    } else {
-      toast({
-        title: "Not enough coins",
-        description: `You need ${location.unlockCost} coins to unlock this location.`,
-        variant: "destructive"
-      });
-    }
+    // Load upgrades and locations
+    const upgrades = await apiService.getUpgrades();
+    const locations = await apiService.getLocations();
+    
+    // Update game state
+    setGameState({
+      ...gameState,
+      player: userData,
+      upgrades: upgrades || [],
+      locations: locations || []
+    });
   };
-
-  const setCurrentLocation = (locationId: string) => {
-    if (gameState.player.unlockedLocations.includes(locationId)) {
+  
+  // Add coins to user balance
+  const addCoins = async (amount: number) => {
+    if (!gameState.player || !telegramId) return;
+    
+    const response = await apiService.addBalance(telegramId, amount);
+    if (response) {
       setGameState(prevState => ({
         ...prevState,
         player: {
-          ...prevState.player,
-          currentLocation: locationId
+          ...prevState.player!,
+          coins: response.new_balance
         }
       }));
     }
   };
-
+  
+  // Purchase an upgrade
+  const purchaseUpgrade = async (upgradeId: number) => {
+    if (!gameState.player || !telegramId) return;
+    
+    const response = await apiService.buyUpgrade(telegramId, upgradeId);
+    if (response) {
+      // Refresh user data and upgrades
+      const userData = await apiService.getUserData(telegramId);
+      const upgrades = await apiService.getUpgrades();
+      
+      setGameState(prevState => ({
+        ...prevState,
+        player: userData,
+        upgrades: upgrades || prevState.upgrades
+      }));
+      
+      toast({
+        title: "Upgrade Purchased!",
+        description: `You've upgraded to the next level.`
+      });
+    } else {
+      toast({
+        title: "Not enough coins",
+        description: "You don't have enough coins to purchase this upgrade.",
+        variant: "destructive"
+      });
+    }
+  };
+  
+  // Unlock a location
+  const unlockLocation = async (locationId: number) => {
+    if (!gameState.player || !telegramId) return;
+    
+    const location = gameState.locations.find(l => l.id === locationId);
+    
+    if (location?.is_unlocked) {
+      // If already unlocked, just set it as current
+      setCurrentLocation(locationId);
+      return;
+    }
+    
+    const response = await apiService.buyLocation(telegramId, locationId);
+    if (response) {
+      // Refresh user data and locations
+      const userData = await apiService.getUserData(telegramId);
+      const locations = await apiService.getLocations();
+      
+      setGameState(prevState => ({
+        ...prevState,
+        player: userData,
+        locations: locations || prevState.locations
+      }));
+      
+      toast({
+        title: "New Location Unlocked!",
+        description: `You've unlocked a new location. Enjoy the new scenery!`
+      });
+    } else {
+      toast({
+        title: "Not enough coins",
+        description: "You don't have enough coins to unlock this location.",
+        variant: "destructive"
+      });
+    }
+  };
+  
+  // Set current location
+  const setCurrentLocation = async (locationId: number) => {
+    if (!gameState.player || !telegramId) return;
+    
+    const response = await apiService.setLocation(telegramId, locationId);
+    if (response) {
+      // Refresh user data
+      const userData = await apiService.getUserData(telegramId);
+      
+      setGameState(prevState => ({
+        ...prevState,
+        player: userData
+      }));
+    }
+  };
+  
+  // Toggle bottom panel
   const toggleBottomPanel = () => {
     setGameState(prevState => ({
       ...prevState,
       isBottomPanelOpen: !prevState.isBottomPanelOpen
     }));
   };
-
+  
+  // Set active tab
   const setActiveTab = (tab: "upgrades" | "locations") => {
     setGameState(prevState => ({
       ...prevState,
@@ -263,7 +250,8 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         unlockLocation,
         setCurrentLocation,
         toggleBottomPanel,
-        setActiveTab
+        setActiveTab,
+        initializeUser
       }}
     >
       {children}

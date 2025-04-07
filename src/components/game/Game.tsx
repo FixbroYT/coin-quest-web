@@ -18,6 +18,14 @@ declare global {
           setText: (text: string) => void;
           onClick: (callback: () => void) => void;
         };
+        initDataUnsafe?: {
+          user?: {
+            id: number;
+            username?: string;
+            first_name?: string;
+            last_name?: string;
+          }
+        }
       };
     };
   }
@@ -26,7 +34,7 @@ declare global {
 const Game = () => {
   const { gameState } = useGameContext();
   const currentLocation = gameState.locations.find(
-    location => location.id === gameState.player.currentLocation
+    location => location.id === gameState.player?.current_location
   );
   
   // Detect if we're running in Telegram WebApp
