@@ -16,9 +16,17 @@ const CoinButton = () => {
     const x = e.clientX - buttonRect.left;
     const y = e.clientY - buttonRect.top;
     
-    // Add coins based on player's click power
-    const clickPower = gameState.player.click_power || 1;
-    addCoins(clickPower);
+    // Add coins based on player's upgrades and location
+    // For simplicity, we'll use the count of upgrades as the click power
+    const clickPower = gameState.player.upgrades.length > 0 ? gameState.player.upgrades.length : 1;
+    
+    // Apply location multiplier
+    const currentLocation = gameState.locations.find(loc => loc.name === gameState.player?.location);
+    const locationMultiplier = currentLocation ? currentLocation.bonus_multiplier : 1;
+    
+    const totalCoins = clickPower * locationMultiplier;
+    
+    addCoins(totalCoins);
     
     // Add visual click effect
     const newEffect = {
@@ -36,7 +44,7 @@ const CoinButton = () => {
   };
   
   // Get player's click power
-  const clickPower = gameState.player?.click_power || 1;
+  const clickPower = gameState.player?.upgrades.length || 1;
   
   return (
     <div className="relative flex items-center justify-center h-48 w-48 md:h-56 md:w-56">

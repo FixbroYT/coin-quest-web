@@ -24,25 +24,37 @@ export const addCoinsToBalance = async (tgId: number, amount: number): Promise<n
 };
 
 // Purchase an upgrade
-export const buyUpgrade = async (tgId: number, upgradeId: number): Promise<boolean> => {
+export const buyUpgrade = async (tgId: number, upgradeId: number): Promise<{success: boolean, newCoins?: number} | null> => {
   const response = await apiService.buyUpgrade(tgId, upgradeId);
-  return !!response;
+  if (response) {
+    return {
+      success: response.success,
+      newCoins: response.new_coins
+    };
+  }
+  return null;
 };
 
 // Buy a location
-export const buyLocation = async (tgId: number, locationId: number): Promise<boolean> => {
+export const buyLocation = async (tgId: number, locationId: number): Promise<{success: boolean, newCoins?: number, ownedLocations?: number[]} | null> => {
   const response = await apiService.buyLocation(tgId, locationId);
-  return !!response;
+  if (response) {
+    return {
+      success: response.success,
+      newCoins: response.new_coins,
+      ownedLocations: response.owned_locations
+    };
+  }
+  return null;
 };
 
 // Set current location
-export const setUserLocation = async (tgId: number, locationId: number): Promise<boolean> => {
+export const setUserLocation = async (tgId: number, locationId: number): Promise<{success: boolean, currentLocation?: string} | null> => {
   const response = await apiService.setLocation(tgId, locationId);
-  return !!response;
+  return response;
 };
 
 // Create a new user
-export const createNewUser = async (tgId: number): Promise<boolean> => {
-  const response = await apiService.createUser(tgId);
-  return !!response;
+export const createNewUser = async (tgId: number): Promise<Player | null> => {
+  return await apiService.createUser(tgId);
 };

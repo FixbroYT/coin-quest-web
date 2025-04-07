@@ -18,11 +18,12 @@ const PlayerProfile = () => {
   
   // Calculate progress metrics
   const totalLocations = locations.length;
-  const unlockedLocations = locations.filter(l => l.is_unlocked).length;
+  const unlockedLocations = player.locations.length;
   const locationsProgress = totalLocations > 0 ? (unlockedLocations / totalLocations) * 100 : 0;
   
-  // Find current location
-  const currentLocation = locations.find(loc => loc.id === player.current_location);
+  // Find current location bonuses
+  const currentLocation = locations.find(loc => loc.name === player.location);
+  const clickBonus = player.upgrades.length > 0 ? player.upgrades.length : 1;
   
   return (
     <div className="flex flex-col gap-4 py-4">
@@ -54,7 +55,7 @@ const PlayerProfile = () => {
               <Zap className="w-4 h-4 text-blue-500" />
               <span className="text-sm">Click Power</span>
             </div>
-            <span className="font-medium">{player.click_power}</span>
+            <span className="font-medium">{clickBonus}</span>
           </div>
           
           <div className="space-y-1">
@@ -75,7 +76,14 @@ const PlayerProfile = () => {
           <CardTitle className="text-base">Current Location</CardTitle>
         </CardHeader>
         <CardContent>
-          {currentLocation?.name || "Unknown"}
+          <div className="flex justify-between">
+            <div>{player.location || "Unknown"}</div>
+            {currentLocation && (
+              <div className="text-sm text-muted-foreground">
+                Bonus: x{currentLocation.bonus_multiplier}
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
     </div>

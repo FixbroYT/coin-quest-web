@@ -13,15 +13,11 @@ const UpgradesTab = () => {
     return <div>Loading upgrades...</div>;
   }
   
-  const getUpgradeIcon = (iconName: string) => {
-    switch (iconName) {
-      case "zap":
-        return <Zap className="w-4 h-4" />;
-      case "mouse-pointer-click":
-        return <MousePointerClick className="w-4 h-4" />;
-      default:
-        return <Zap className="w-4 h-4" />;
+  const getUpgradeIcon = (upgradeName: string) => {
+    if (upgradeName.toLowerCase().includes('double')) {
+      return <Zap className="w-4 h-4" />;
     }
+    return <MousePointerClick className="w-4 h-4" />;
   };
   
   return (
@@ -31,20 +27,20 @@ const UpgradesTab = () => {
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {upgrades.map(upgrade => {
-          const cost = upgrade.base_cost * Math.pow(1.5, upgrade.current_level);
-          const canAfford = player.coins >= cost;
+          const upgradeLevel = player.upgrades.filter(id => id === upgrade.id).length;
+          const canAfford = player.coins >= upgrade.cost;
           
           return (
             <Card key={upgrade.id} className={`${canAfford ? "" : "opacity-70"}`}>
               <CardHeader className="pb-2">
                 <div className="flex justify-between items-start">
                   <CardTitle className="text-base flex items-center gap-2">
-                    {getUpgradeIcon(upgrade.icon)}
+                    {getUpgradeIcon(upgrade.name)}
                     {upgrade.name}
                   </CardTitle>
                   <div className="text-amber-500 font-medium text-sm flex items-center gap-1">
                     <Coins className="w-3 h-3" />
-                    {Math.floor(cost)}
+                    {upgrade.cost}
                   </div>
                 </div>
                 <CardDescription>{upgrade.description}</CardDescription>
@@ -53,9 +49,12 @@ const UpgradesTab = () => {
                 <div className="space-y-1">
                   <div className="flex justify-between text-sm">
                     <span>Level</span>
-                    <span>{upgrade.current_level}</span>
+                    <span>{upgradeLevel || 0}</span>
                   </div>
-                  <Progress value={upgrade.current_level % 10 * 10} className="h-2" />
+                  <Progress value={upgradeLevel % 10 * 10} className="h-2" />
+                  <div className="text-sm text-muted-foreground mt-2">
+                    Bonus: x{upgrade.bonus}
+                  </div>
                 </div>
               </CardContent>
               <CardFooter className="pt-0">
@@ -65,7 +64,7 @@ const UpgradesTab = () => {
                   className="w-full"
                   variant={canAfford ? "default" : "outline"}
                 >
-                  {upgrade.current_level === 0 ? "Purchase" : "Upgrade"}
+                  {upgradeLevel === 0 ? "Purchase" : "Upgrade"}
                 </Button>
               </CardFooter>
             </Card>

@@ -14,7 +14,7 @@ const GameHeader = () => {
         <div className="flex items-center space-x-2">
           <Coins className="w-5 h-5 text-yellow-500" />
           <div className="font-semibold">
-            {Math.floor(gameState.player?.coins || 0).toLocaleString()}
+            {gameState.player ? Math.floor(gameState.player.coins).toLocaleString() : 0}
           </div>
         </div>
         

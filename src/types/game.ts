@@ -1,31 +1,24 @@
+
 export interface Player {
-  id: number;
   tg_id: number;
-  name: string;
   coins: number;
-  total_earned: number;
-  click_power: number;
-  current_location: number;
+  location: string;
+  upgrades: number[];
+  locations: string[];
 }
 
 export interface Upgrade {
   id: number;
   name: string;
   description: string;
-  base_cost: number;
-  current_level: number;
-  coin_multiplier: number;
-  icon: string;
+  cost: number;
+  bonus: number;
 }
 
 export interface Location {
   id: number;
   name: string;
-  description: string;
-  unlock_cost: number;
-  coin_multiplier: number;
-  background: string;
-  is_unlocked: boolean;
+  bonus_multiplier: number;
 }
 
 export interface GameState {

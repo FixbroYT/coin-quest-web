@@ -43,8 +43,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     
     // If user doesn't exist, create a new one
     if (!userData) {
-      await createNewUser(tgId);
-      userData = await loadUserData(tgId);
+      userData = await createNewUser(tgId);
       if (!userData) {
         toast({
           title: "Error",
@@ -88,16 +87,14 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const purchaseUpgrade = async (upgradeId: number) => {
     if (!gameState.player || !telegramId) return;
     
-    const success = await buyUpgrade(telegramId, upgradeId);
-    if (success) {
-      // Refresh user data and upgrades
+    const result = await buyUpgrade(telegramId, upgradeId);
+    if (result && result.success) {
+      // Update player data with the new coins balance and upgrades
       const userData = await loadUserData(telegramId);
-      const upgrades = await loadUpgrades();
       
       setGameState(prevState => ({
         ...prevState,
-        player: userData,
-        upgrades: upgrades || prevState.upgrades
+        player: userData
       }));
       
       toast({
@@ -117,24 +114,29 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const unlockLocation = async (locationId: number) => {
     if (!gameState.player || !telegramId) return;
     
-    const location = gameState.locations.find(l => l.id === locationId);
+    // Check if the location is already owned by the player
+    const isLocationOwned = gameState.player.locations.some(
+      loc => {
+        // Find location name from ID
+        const location = gameState.locations.find(l => l.id === locationId);
+        return location && gameState.player?.locations.includes(location.name);
+      }
+    );
     
-    if (location?.is_unlocked) {
+    if (isLocationOwned) {
       // If already unlocked, just set it as current
       setCurrentLocation(locationId);
       return;
     }
     
-    const success = await buyLocation(telegramId, locationId);
-    if (success) {
-      // Refresh user data and locations
+    const result = await buyLocation(telegramId, locationId);
+    if (result && result.success) {
+      // Refresh user data
       const userData = await loadUserData(telegramId);
-      const locations = await loadLocations();
       
       setGameState(prevState => ({
         ...prevState,
-        player: userData,
-        locations: locations || prevState.locations
+        player: userData
       }));
       
       toast({
@@ -154,8 +156,8 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const setCurrentLocation = async (locationId: number) => {
     if (!gameState.player || !telegramId) return;
     
-    const success = await setUserLocation(telegramId, locationId);
-    if (success) {
+    const result = await setUserLocation(telegramId, locationId);
+    if (result && result.success) {
       // Refresh user data
       const userData = await loadUserData(telegramId);
       

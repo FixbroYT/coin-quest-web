@@ -34,7 +34,7 @@ declare global {
 const Game = () => {
   const { gameState } = useGameContext();
   const currentLocation = gameState.locations.find(
-    location => location.id === gameState.player?.current_location
+    location => location.name === gameState.player?.location
   );
   
   // Detect if we're running in Telegram WebApp
@@ -52,8 +52,24 @@ const Game = () => {
     }
   }, []);
   
+  // Get background class based on location name
+  const getBackgroundClass = (locationName?: string) => {
+    if (!locationName) return "bg-gradient-to-br from-blue-100 to-blue-200";
+    
+    switch(locationName.toLowerCase()) {
+      case 'forest':
+        return "bg-gradient-to-br from-green-100 to-green-300";
+      case 'city':
+        return "bg-gradient-to-br from-blue-300 to-blue-500";
+      case 'mountain':
+        return "bg-gradient-to-br from-stone-200 to-stone-400";
+      default:
+        return "bg-gradient-to-br from-blue-100 to-blue-200";
+    }
+  };
+  
   return (
-    <main className={`min-h-screen pt-16 pb-20 ${currentLocation?.background || "bg-background"}`}>
+    <main className={`min-h-screen pt-16 pb-20 ${getBackgroundClass(currentLocation?.name)}`}>
       <GameHeader />
       
       <div className="flex flex-col items-center justify-center h-[calc(100vh-12rem)]">
