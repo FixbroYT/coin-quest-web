@@ -1,58 +1,18 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { Coins, Map } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { apiService } from "@/services/apiService";
-
-// Types
-interface Player {
-  id: number;
-  tg_id: number;
-  name: string;
-  coins: number;
-  total_earned: number;
-  click_power: number;
-  current_location: number;
-}
-
-interface Upgrade {
-  id: number;
-  name: string;
-  description: string;
-  base_cost: number;
-  current_level: number;
-  coin_multiplier: number;
-  icon: string;
-}
-
-interface Location {
-  id: number;
-  name: string;
-  description: string;
-  unlock_cost: number;
-  coin_multiplier: number;
-  background: string;
-  is_unlocked: boolean;
-}
-
-interface GameState {
-  player: Player | null;
-  upgrades: Upgrade[];
-  locations: Location[];
-  isBottomPanelOpen: boolean;
-  activeTab: "upgrades" | "locations";
-}
-
-interface GameContextProps {
-  gameState: GameState;
-  addCoins: (amount: number) => void;
-  purchaseUpgrade: (upgradeId: number) => void;
-  unlockLocation: (locationId: number) => void;
-  setCurrentLocation: (locationId: number) => void;
-  toggleBottomPanel: () => void;
-  setActiveTab: (tab: "upgrades" | "locations") => void;
-  initializeUser: (tgId: number) => Promise<void>;
-}
+import { useTelegram } from "@/hooks/useTelegram";
+import { GameState, GameContextProps } from "@/types/game";
+import {
+  loadUserData,
+  loadUpgrades,
+  loadLocations,
+  addCoinsToBalance,
+  buyUpgrade,
+  buyLocation,
+  setUserLocation,
+  createNewUser
+} from "@/services/gameService";
 
 const initialGameState: GameState = {
   player: null,
@@ -67,43 +27,24 @@ const GameContext = createContext<GameContextProps | undefined>(undefined);
 export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [gameState, setGameState] = useState<GameState>(initialGameState);
   const { toast } = useToast();
-  const [telegramId, setTelegramId] = useState<number | null>(null);
+  const { telegramId } = useTelegram();
   
-  // Initialize the game with user data from Telegram WebApp
+  // Initialize user when telegramId is available
   useEffect(() => {
-    // Check if Telegram WebApp is available
-    if (window.Telegram?.WebApp) {
-      const tg = window.Telegram.WebApp;
-      // Init Telegram WebApp
-      tg.expand();
-      tg.ready();
-      
-      // Get user data
-      const user = tg.initDataUnsafe?.user;
-      if (user && user.id) {
-        setTelegramId(user.id);
-        initializeUser(user.id);
-      }
-      
-      console.log("Telegram WebApp initialized");
-    } else {
-      console.log("Running outside of Telegram WebApp");
-      // For testing purposes, use a mock ID
-      const mockId = 12345;
-      setTelegramId(mockId);
-      initializeUser(mockId);
+    if (telegramId) {
+      initializeUser(telegramId);
     }
-  }, []);
+  }, [telegramId]);
   
   // Load game data
   const initializeUser = async (tgId: number) => {
     // Try to get user
-    let userData = await apiService.getUserData(tgId);
+    let userData = await loadUserData(tgId);
     
     // If user doesn't exist, create a new one
     if (!userData) {
-      await apiService.createUser(tgId);
-      userData = await apiService.getUserData(tgId);
+      await createNewUser(tgId);
+      userData = await loadUserData(tgId);
       if (!userData) {
         toast({
           title: "Error",
@@ -115,8 +56,8 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
     
     // Load upgrades and locations
-    const upgrades = await apiService.getUpgrades();
-    const locations = await apiService.getLocations();
+    const upgrades = await loadUpgrades();
+    const locations = await loadLocations();
     
     // Update game state
     setGameState({
@@ -131,13 +72,13 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const addCoins = async (amount: number) => {
     if (!gameState.player || !telegramId) return;
     
-    const response = await apiService.addBalance(telegramId, amount);
-    if (response) {
+    const newBalance = await addCoinsToBalance(telegramId, amount);
+    if (newBalance !== null) {
       setGameState(prevState => ({
         ...prevState,
         player: {
           ...prevState.player!,
-          coins: response.new_balance
+          coins: newBalance
         }
       }));
     }
@@ -147,11 +88,11 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const purchaseUpgrade = async (upgradeId: number) => {
     if (!gameState.player || !telegramId) return;
     
-    const response = await apiService.buyUpgrade(telegramId, upgradeId);
-    if (response) {
+    const success = await buyUpgrade(telegramId, upgradeId);
+    if (success) {
       // Refresh user data and upgrades
-      const userData = await apiService.getUserData(telegramId);
-      const upgrades = await apiService.getUpgrades();
+      const userData = await loadUserData(telegramId);
+      const upgrades = await loadUpgrades();
       
       setGameState(prevState => ({
         ...prevState,
@@ -184,11 +125,11 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       return;
     }
     
-    const response = await apiService.buyLocation(telegramId, locationId);
-    if (response) {
+    const success = await buyLocation(telegramId, locationId);
+    if (success) {
       // Refresh user data and locations
-      const userData = await apiService.getUserData(telegramId);
-      const locations = await apiService.getLocations();
+      const userData = await loadUserData(telegramId);
+      const locations = await loadLocations();
       
       setGameState(prevState => ({
         ...prevState,
@@ -213,10 +154,10 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const setCurrentLocation = async (locationId: number) => {
     if (!gameState.player || !telegramId) return;
     
-    const response = await apiService.setLocation(telegramId, locationId);
-    if (response) {
+    const success = await setUserLocation(telegramId, locationId);
+    if (success) {
       // Refresh user data
-      const userData = await apiService.getUserData(telegramId);
+      const userData = await loadUserData(telegramId);
       
       setGameState(prevState => ({
         ...prevState,

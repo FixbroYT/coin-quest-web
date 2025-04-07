@@ -1,4 +1,3 @@
-
 export interface Player {
   id: number;
   tg_id: number;
@@ -35,4 +34,15 @@ export interface GameState {
   locations: Location[];
   isBottomPanelOpen: boolean;
   activeTab: "upgrades" | "locations";
+}
+
+export interface GameContextProps {
+  gameState: GameState;
+  addCoins: (amount: number) => void;
+  purchaseUpgrade: (upgradeId: number) => void;
+  unlockLocation: (locationId: number) => void;
+  setCurrentLocation: (locationId: number) => void;
+  toggleBottomPanel: () => void;
+  setActiveTab: (tab: "upgrades" | "locations") => void;
+  initializeUser: (tgId: number) => Promise<void>;
 }
