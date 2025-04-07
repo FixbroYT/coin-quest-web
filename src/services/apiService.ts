@@ -2,7 +2,7 @@
 import axios from 'axios';
 
 // Define the API base URL - replace with your actual FastAPI endpoint
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 // Create axios instance
 const api = axios.create({
