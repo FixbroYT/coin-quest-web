@@ -1,8 +1,8 @@
 
 import axios from 'axios';
 
-// Define the API base URL - replace with your actual FastAPI endpoint
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+// Define the API base URL - это будет корневой URL нашего сервера
+const API_URL = '/api';
 
 // Create axios instance
 const api = axios.create({
@@ -83,7 +83,7 @@ export const apiService = {
   // Create a new user
   createUser: async (tgId: number) => {
     try {
-      const response = await api.post('/api/users/create', { tg_id: tgId });
+      const response = await api.post('/users/create', { tg_id: tgId });
       return response.data;
     } catch (error) {
       console.error('Error creating user:', error);
@@ -94,7 +94,7 @@ export const apiService = {
   // Add balance to user
   addBalance: async (tgId: number, coins: number) => {
     try {
-      const response = await api.post(`/api/users/${tgId}/balance/add`, { coins });
+      const response = await api.post(`/users/${tgId}/balance/add`, { coins });
       return response.data;
     } catch (error) {
       console.error('Error adding balance:', error);

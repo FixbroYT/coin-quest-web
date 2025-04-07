@@ -1,73 +1,48 @@
-# Welcome to your Lovable project
 
-## Project info
+# Coin Quest
 
-**URL**: https://lovable.dev/projects/6f57e445-3bf5-4405-9b4d-b19ef07154ed
+Игра-кликер для Telegram с FastAPI бэкендом.
 
-## How can I edit this code?
+## Установка и запуск
 
-There are several ways of editing your application.
-
-**Use Lovable**
-
-Simply visit the [Lovable Project](https://lovable.dev/projects/6f57e445-3bf5-4405-9b4d-b19ef07154ed) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+1. Установите зависимости:
+```
+pip install -r requirements.txt
 ```
 
-**Edit a file directly in GitHub**
+2. Соберите фронтенд:
+```
+python build.py
+```
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+3. Запустите сервер:
+```
+python main.py
+```
 
-**Use GitHub Codespaces**
+Или используйте единую команду для запуска:
+```
+python run.py
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+4. Откройте браузер и перейдите по адресу: http://localhost:8000
 
-## What technologies are used for this project?
+## Структура приложения
 
-This project is built with .
+- `main.py` - FastAPI сервер
+- `src/` - Исходный код фронтенда (React)
+- `dist/` - Собранный фронтенд (после выполнения build.py)
+- `build.py` - Скрипт для сборки фронтенда
+- `run.py` - Скрипт для запуска всего приложения
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+## API эндпоинты
 
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/6f57e445-3bf5-4405-9b4d-b19ef07154ed) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes it is!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+- `GET /api` - Приветственное сообщение API
+- `GET /api/users/{tg_id}` - Получить данные пользователя
+- `POST /api/users/create` - Создать нового пользователя
+- `GET /api/upgrades` - Получить список доступных улучшений
+- `GET /api/locations` - Получить список локаций
+- `POST /api/users/{tg_id}/buy_upgrade/{upgrade_id}` - Купить улучшение
+- `POST /api/users/{tg_id}/buy_location/{location_id}` - Разблокировать локацию
+- `POST /api/users/{tg_id}/set_location/{location_id}` - Установить текущую локацию
+- `POST /api/users/{tg_id}/balance/add` - Добавить монеты пользователю

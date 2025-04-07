@@ -1,11 +1,14 @@
-
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 from typing import List, Optional
 import uvicorn
 from datetime import datetime
 import uuid
+import os
+from pathlib import Path
 
 app = FastAPI()
 
@@ -17,6 +20,15 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Путь к статическим файлам (фронтенд)
+static_dir = Path(__file__).parent / "dist"
+if not static_dir.exists():
+    os.makedirs(static_dir, exist_ok=True)
+
+# Монтируем статические файлы
+app.mount("/assets", StaticFiles(directory=f"{static_dir}/assets"), name="assets")
+app.mount("/", StaticFiles(directory=static_dir, html=True), name="static")
 
 # Модели данных
 class Player(BaseModel):
@@ -103,11 +115,11 @@ locations = [
 
 # API эндпоинты
 
-@app.get("/")
+@app.get("/api")
 def read_root():
     return {"message": "Добро пожаловать в API игры!"}
 
-@app.get("/users/{tg_id}", response_model=Player)
+@app.get("/api/users/{tg_id}", response_model=Player)
 def get_user_data(tg_id: int):
     if tg_id in players:
         return players[tg_id]
@@ -130,19 +142,19 @@ def create_user(tg_id: int):
     players[tg_id] = new_player
     return {"success": True, "message": "Пользователь создан"}
 
-@app.get("/upgrades")
+@app.get("/api/upgrades")
 def get_upgrades():
     # Для каждого пользователя должны быть свои уровни апгрейдов
     # Здесь упрощенная версия
     return upgrades
 
-@app.get("/locations")
+@app.get("/api/locations")
 def get_locations():
     # Для каждого пользователя должны быть свои доступные локации
     # Здесь упрощенная версия
     return locations
 
-@app.post("/users/{tg_id}/buy_upgrade/{upgrade_id}")
+@app.post("/api/users/{tg_id}/buy_upgrade/{upgrade_id}")
 def buy_user_upgrade(tg_id: int, upgrade_id: int):
     if tg_id not in players:
         raise HTTPException(status_code=404, detail="Пользователь не найден")
@@ -169,7 +181,7 @@ def buy_user_upgrade(tg_id: int, upgrade_id: int):
     
     return {"success": True, "new_balance": player["coins"]}
 
-@app.post("/users/{tg_id}/buy_location/{location_id}")
+@app.post("/api/users/{tg_id}/buy_location/{location_id}")
 def buy_user_location(tg_id: int, location_id: int):
     if tg_id not in players:
         raise HTTPException(status_code=404, detail="Пользователь не найден")
@@ -192,7 +204,7 @@ def buy_user_location(tg_id: int, location_id: int):
     
     return {"success": True, "message": "Локация разблокирована"}
 
-@app.post("/users/{tg_id}/set_location/{location_id}")
+@app.post("/api/users/{tg_id}/set_location/{location_id}")
 def set_user_location(tg_id: int, location_id: int):
     if tg_id not in players:
         raise HTTPException(status_code=404, detail="Пользователь не найден")
