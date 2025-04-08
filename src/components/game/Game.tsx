@@ -33,8 +33,10 @@ declare global {
 
 const Game = () => {
   const { gameState } = useGameContext();
+  
+  const currentLocationName = gameState.player?.location || "";
   const currentLocation = gameState.locations.find(
-    location => location.name === gameState.player?.location
+    location => location.name === currentLocationName
   );
   
   // Detect if we're running in Telegram WebApp
@@ -69,7 +71,7 @@ const Game = () => {
   };
   
   return (
-    <main className={`min-h-screen pt-16 pb-20 ${getBackgroundClass(currentLocation?.name)}`}>
+    <main className={`min-h-screen pt-16 pb-20 ${getBackgroundClass(currentLocationName)}`}>
       <GameHeader />
       
       <div className="flex flex-col items-center justify-center h-[calc(100vh-12rem)]">

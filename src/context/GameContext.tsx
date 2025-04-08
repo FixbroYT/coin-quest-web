@@ -38,6 +38,13 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   }, [telegramId]);
   
+  // Update income when player or location changes
+  useEffect(() => {
+    if (telegramId && gameState.player) {
+      getPlayerIncome(telegramId);
+    }
+  }, [telegramId, gameState.player?.location]);
+  
   // Load game data
   const initializeUser = async (tgId: number) => {
     // Try to get user
@@ -60,9 +67,6 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const upgrades = await loadUpgrades();
     const locations = await loadLocations();
     
-    // Get player income
-    await getPlayerIncome(tgId);
-    
     // Update game state
     setGameState({
       ...gameState,
@@ -70,6 +74,9 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       upgrades: upgrades || [],
       locations: locations || []
     });
+    
+    // Get player income
+    await getPlayerIncome(tgId);
   };
   
   // Get player's current income
@@ -181,6 +188,9 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         ...prevState,
         player: userData
       }));
+      
+      // Update income after location change
+      await getPlayerIncome(telegramId);
     }
   };
   
