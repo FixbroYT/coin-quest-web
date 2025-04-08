@@ -11,7 +11,8 @@ import {
   buyUpgrade,
   buyLocation,
   setUserLocation,
-  createNewUser
+  createNewUser,
+  getUserIncome
 } from "@/services/gameService";
 
 const initialGameState: GameState = {
@@ -19,7 +20,8 @@ const initialGameState: GameState = {
   upgrades: [],
   locations: [],
   isBottomPanelOpen: false,
-  activeTab: "upgrades"
+  activeTab: "upgrades",
+  income: 0
 };
 
 const GameContext = createContext<GameContextProps | undefined>(undefined);
@@ -58,6 +60,9 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const upgrades = await loadUpgrades();
     const locations = await loadLocations();
     
+    // Get player income
+    await getPlayerIncome(tgId);
+    
     // Update game state
     setGameState({
       ...gameState,
@@ -65,6 +70,19 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       upgrades: upgrades || [],
       locations: locations || []
     });
+  };
+  
+  // Get player's current income
+  const getPlayerIncome = async (tgId: number) => {
+    if (!tgId) return;
+    
+    const income = await getUserIncome(tgId);
+    if (income !== null) {
+      setGameState(prevState => ({
+        ...prevState,
+        income
+      }));
+    }
   };
   
   // Add coins to user balance
@@ -92,6 +110,9 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       // Update player data with the new coins balance and upgrades
       const userData = await loadUserData(telegramId);
       
+      // Also update the player's income
+      await getPlayerIncome(telegramId);
+      
       setGameState(prevState => ({
         ...prevState,
         player: userData
@@ -115,13 +136,8 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (!gameState.player || !telegramId) return;
     
     // Check if the location is already owned by the player
-    const isLocationOwned = gameState.player.locations.some(
-      loc => {
-        // Find location name from ID
-        const location = gameState.locations.find(l => l.id === locationId);
-        return location && gameState.player?.locations.includes(location.name);
-      }
-    );
+    const location = gameState.locations.find(loc => loc.id === locationId);
+    const isLocationOwned = location && gameState.player.locations.includes(location.name);
     
     if (isLocationOwned) {
       // If already unlocked, just set it as current
@@ -194,7 +210,8 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setCurrentLocation,
         toggleBottomPanel,
         setActiveTab,
-        initializeUser
+        initializeUser,
+        getPlayerIncome
       }}
     >
       {children}

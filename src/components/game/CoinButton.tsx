@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useGameContext } from "@/context/GameContext";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -16,17 +16,11 @@ const CoinButton = () => {
     const x = e.clientX - buttonRect.left;
     const y = e.clientY - buttonRect.top;
     
-    // Add coins based on player's upgrades and location
-    // For simplicity, we'll use the count of upgrades as the click power
-    const clickPower = gameState.player.upgrades.length > 0 ? gameState.player.upgrades.length : 1;
+    // Use the income from the API
+    const income = gameState.income || 1;
     
-    // Apply location multiplier
-    const currentLocation = gameState.locations.find(loc => loc.name === gameState.player?.location);
-    const locationMultiplier = currentLocation ? currentLocation.bonus_multiplier : 1;
-    
-    const totalCoins = clickPower * locationMultiplier;
-    
-    addCoins(totalCoins);
+    // Add coins
+    addCoins(income);
     
     // Add visual click effect
     const newEffect = {
@@ -42,9 +36,6 @@ const CoinButton = () => {
       setClickEffects(prev => prev.filter(effect => effect.id !== newEffect.id));
     }, 1000);
   };
-  
-  // Get player's click power
-  const clickPower = gameState.player?.upgrades.length || 1;
   
   return (
     <div className="relative flex items-center justify-center h-48 w-48 md:h-56 md:w-56">
@@ -76,7 +67,7 @@ const CoinButton = () => {
             transition={{ duration: 0.8, ease: "easeOut" }}
             className="text-lg md:text-xl"
           >
-            +{clickPower}
+            +{gameState.income || 1}
           </motion.div>
         </div>
       ))}

@@ -27,7 +27,9 @@ const UpgradesTab = () => {
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {upgrades.map(upgrade => {
-          const upgradeLevel = player.upgrades.filter(id => id === upgrade.id).length;
+          // Find player's upgrade level (count) for this upgrade
+          const playerUpgrade = player.upgrades.find(u => u.id === upgrade.id);
+          const upgradeLevel = playerUpgrade ? playerUpgrade.count : 0;
           const canAfford = player.coins >= upgrade.cost;
           
           return (
@@ -53,7 +55,7 @@ const UpgradesTab = () => {
                   </div>
                   <Progress value={upgradeLevel % 10 * 10} className="h-2" />
                   <div className="text-sm text-muted-foreground mt-2">
-                    Bonus: x{upgrade.bonus}
+                    Bonus: +{upgrade.bonus}
                   </div>
                 </div>
               </CardContent>

@@ -23,7 +23,6 @@ const PlayerProfile = () => {
   
   // Find current location bonuses
   const currentLocation = locations.find(loc => loc.name === player.location);
-  const clickBonus = player.upgrades.length > 0 ? player.upgrades.length : 1;
   
   return (
     <div className="flex flex-col gap-4 py-4">
@@ -53,9 +52,9 @@ const PlayerProfile = () => {
           <div className="flex justify-between">
             <div className="flex items-center gap-2">
               <Zap className="w-4 h-4 text-blue-500" />
-              <span className="text-sm">Click Power</span>
+              <span className="text-sm">Income per Click</span>
             </div>
-            <span className="font-medium">{clickBonus}</span>
+            <span className="font-medium">{gameState.income || 1}</span>
           </div>
           
           <div className="space-y-1">
@@ -76,8 +75,8 @@ const PlayerProfile = () => {
           <CardTitle className="text-base">Current Location</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex justify-between">
-            <div>{player.location || "Unknown"}</div>
+          <div className="flex justify-between items-center">
+            <div className="font-medium">{player.location}</div>
             {currentLocation && (
               <div className="text-sm text-muted-foreground">
                 Bonus: x{currentLocation.bonus_multiplier}

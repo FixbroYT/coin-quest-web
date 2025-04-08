@@ -1,9 +1,15 @@
 
+export interface PlayerUpgrade {
+  id: number;
+  name: string;
+  count: number;
+}
+
 export interface Player {
   tg_id: number;
   coins: number;
   location: string;
-  upgrades: number[];
+  upgrades: PlayerUpgrade[];
   locations: string[];
 }
 
@@ -27,6 +33,7 @@ export interface GameState {
   locations: Location[];
   isBottomPanelOpen: boolean;
   activeTab: "upgrades" | "locations";
+  income: number;
 }
 
 export interface GameContextProps {
@@ -38,4 +45,5 @@ export interface GameContextProps {
   toggleBottomPanel: () => void;
   setActiveTab: (tab: "upgrades" | "locations") => void;
   initializeUser: (tgId: number) => Promise<void>;
+  getPlayerIncome: (tgId: number) => Promise<void>;
 }

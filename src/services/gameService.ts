@@ -58,3 +58,9 @@ export const setUserLocation = async (tgId: number, locationId: number): Promise
 export const createNewUser = async (tgId: number): Promise<Player | null> => {
   return await apiService.createUser(tgId);
 };
+
+// Get user's current income
+export const getUserIncome = async (tgId: number): Promise<number | null> => {
+  const response = await apiService.getUserIncome(tgId);
+  return response ? response.income : null;
+};

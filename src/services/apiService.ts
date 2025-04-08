@@ -100,5 +100,16 @@ export const apiService = {
       console.error('Error adding balance:', error);
       return null;
     }
+  },
+  
+  // Get user's current income
+  getUserIncome: async (tgId: number) => {
+    try {
+      const response = await api.get(`/users/${tgId}/income`);
+      return response.data;
+    } catch (error) {
+      console.error('Error getting user income:', error);
+      return null;
+    }
   }
 };
