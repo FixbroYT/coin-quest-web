@@ -48,6 +48,10 @@ const Game = () => {
       tg.expand();
       tg.ready();
       
+      // Log user information
+      const initDataUnsafe = tg.initDataUnsafe;
+      console.log("Telegram User in Game component:", initDataUnsafe?.user);
+      
       console.log("Telegram WebApp initialized");
     } else {
       console.log("Running outside of Telegram WebApp");

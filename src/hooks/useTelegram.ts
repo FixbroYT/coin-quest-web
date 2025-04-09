@@ -19,18 +19,31 @@ export const useTelegram = () => {
       tg.expand();
       tg.ready();
       
-      // Get user data
-      const user = tg.initDataUnsafe?.user;
-      if (user && user.id) {
-        setTelegramId(user.id);
-      }
+      // Get user data from initDataUnsafe
+      const initDataUnsafe = tg.initDataUnsafe;
+      console.log("Telegram User:", initDataUnsafe?.user); // Log user data
       
-      console.log("Telegram WebApp initialized");
+      const userId = initDataUnsafe?.user?.id;
+      if (userId) {
+        setTelegramId(userId);
+        console.log("Setting Telegram ID:", userId);
+      } else {
+        console.log("No Telegram user ID found in initDataUnsafe");
+        // For development/testing purposes only
+        if (process.env.NODE_ENV === 'development') {
+          const devId = 12345;
+          console.log("Using development Telegram ID:", devId);
+          setTelegramId(devId);
+        }
+      }
     } else {
       console.log("Running outside of Telegram WebApp");
-      // For testing purposes, use a mock ID
-      const mockId = 12345;
-      setTelegramId(mockId);
+      // For development/testing purposes only
+      if (process.env.NODE_ENV === 'development') {
+        const devId = 12345;
+        console.log("Using development Telegram ID:", devId);
+        setTelegramId(devId);
+      }
     }
   }, []);
 
