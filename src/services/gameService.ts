@@ -56,6 +56,7 @@ export const setUserLocation = async (tgId: number, locationId: number): Promise
 
 // Create a new user
 export const createNewUser = async (tgId: number): Promise<Player | null> => {
+  console.log("Creating new user with Telegram ID:", tgId);
   return await apiService.createUser(tgId);
 };
 

@@ -34,6 +34,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   // Initialize user when telegramId is available
   useEffect(() => {
     if (telegramId) {
+      console.log("Initializing user with telegramId:", telegramId);
       initializeUser(telegramId);
     }
   }, [telegramId]);
@@ -47,13 +48,17 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   
   // Load game data
   const initializeUser = async (tgId: number) => {
+    console.log("Starting user initialization for ID:", tgId);
     // Try to get user
     let userData = await loadUserData(tgId);
+    console.log("Loaded user data:", userData);
     
     // If user doesn't exist, create a new one
     if (!userData) {
+      console.log("No user data found, creating new user");
       userData = await createNewUser(tgId);
       if (!userData) {
+        console.error("Failed to create new user");
         toast({
           title: "Error",
           description: "Failed to initialize user",
@@ -61,11 +66,16 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         });
         return;
       }
+      console.log("New user created:", userData);
+    } else {
+      console.log("Existing user found:", userData);
     }
     
     // Load upgrades and locations
     const upgrades = await loadUpgrades();
     const locations = await loadLocations();
+    console.log("Loaded upgrades:", upgrades);
+    console.log("Loaded locations:", locations);
     
     // Update game state
     setGameState({
@@ -84,6 +94,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (!tgId) return;
     
     const income = await getUserIncome(tgId);
+    console.log("Player income:", income);
     if (income !== null) {
       setGameState(prevState => ({
         ...prevState,

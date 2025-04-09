@@ -83,7 +83,13 @@ export const apiService = {
   // Create a new user
   createUser: async (tgId: number) => {
     try {
-      const response = await api.post('/api/users/create', { tg_id: tgId });
+      // Format the request body correctly
+      const requestBody = {
+        tg_id: tgId
+      };
+      console.log("Creating user with request:", requestBody);
+      const response = await api.post('/api/users/create', requestBody);
+      console.log("Create user response:", response.data);
       return response.data;
     } catch (error) {
       console.error('Error creating user:', error);
