@@ -35,43 +35,20 @@ const Game = () => {
   const { gameState, initializeUser } = useGameContext();
   
   const currentLocationName = gameState.player?.location || "";
-  const currentLocation = gameState.locations.find(
-    location => location.name === currentLocationName
-  );
+  const currentLocation = gameState.locations && Array.isArray(gameState.locations) ? 
+    gameState.locations.find(location => location.name === currentLocationName) : null;
   
-  // Detect if we're running in Telegram WebApp
+  // Initialize user regardless of Telegram WebApp availability
   useEffect(() => {
-    // Check if Telegram WebApp is available
-    if (window.Telegram?.WebApp) {
-      const tg = window.Telegram.WebApp;
-      // Init Telegram WebApp
-      tg.expand();
-      tg.ready();
-      
-      // Log user information
-      const initDataUnsafe = tg.initDataUnsafe;
-      console.log("Telegram User in Game component:", initDataUnsafe?.user);
-      
-      // Try to manually initialize if no player data
-      if (!gameState.player && initDataUnsafe?.user?.id) {
-        console.log("Manual initialization with ID:", initDataUnsafe.user.id);
-        initializeUser(initDataUnsafe.user.id);
-      } else if (!gameState.player && process.env.NODE_ENV === 'development') {
-        console.log("Manual initialization with dev ID in Game component");
-        initializeUser(12345); // Development ID
-      }
-      
-      console.log("Telegram WebApp initialized");
-    } else {
-      console.log("Running outside of Telegram WebApp");
-      
-      // For development, try manual initialization if no player data
-      if (!gameState.player && process.env.NODE_ENV === 'development') {
-        console.log("Manual initialization with dev ID in Game component");
-        initializeUser(12345); // Development ID
-      }
-    }
-  }, [gameState.player, initializeUser]);
+    console.log("Game component mounted, initializing user");
+    
+    // Always try to initialize with development ID
+    console.log("Initializing with dev ID in Game component");
+    initializeUser(12345);
+    
+    // Log current gameState
+    console.log("Current gameState:", gameState);
+  }, [initializeUser]);
   
   // Get background class based on location name
   const getBackgroundClass = (locationName?: string) => {

@@ -2,9 +2,9 @@
 import axios from 'axios';
 
 // Define the API base URL
-const API_URL = window.location.origin;
+const API_URL = import.meta.env.DEV ? window.location.origin : window.location.origin;
 
-// Create axios instance
+// Create axios instance with detailed logging
 const api = axios.create({
   baseURL: API_URL,
   headers: {
@@ -12,11 +12,44 @@ const api = axios.create({
   }
 });
 
+// Add request interceptor for logging
+api.interceptors.request.use(request => {
+  console.log('API Request:', {
+    url: request.url,
+    method: request.method,
+    data: request.data,
+    baseURL: request.baseURL
+  });
+  return request;
+});
+
+// Add response interceptor for logging
+api.interceptors.response.use(
+  response => {
+    console.log('API Response:', {
+      url: response.config.url,
+      status: response.status,
+      data: response.data
+    });
+    return response;
+  },
+  error => {
+    console.error('API Error:', {
+      url: error.config?.url,
+      status: error.response?.status,
+      data: error.response?.data,
+      message: error.message
+    });
+    return Promise.reject(error);
+  }
+);
+
 // API functions
 export const apiService = {
   // Get user data by Telegram ID
   getUserData: async (tgId: number) => {
     try {
+      console.log(`Fetching user data for ID: ${tgId}`);
       const response = await api.get(`/api/users/${tgId}`);
       console.log("getUserData response:", response.data);
       return response.data;
@@ -29,6 +62,7 @@ export const apiService = {
   // Get all available upgrades
   getUpgrades: async () => {
     try {
+      console.log("Fetching all upgrades");
       const response = await api.get('/api/upgrades');
       return response.data;
     } catch (error) {
@@ -51,6 +85,7 @@ export const apiService = {
   // Get all available locations
   getLocations: async () => {
     try {
+      console.log("Fetching all locations");
       const response = await api.get('/api/locations');
       return response.data;
     } catch (error) {
@@ -84,12 +119,12 @@ export const apiService = {
   // Create a new user
   createUser: async (tgId: number) => {
     try {
-      // Format the request body correctly
+      console.log(`Creating user with ID: ${tgId}`);
       const requestBody = {
         tg_id: tgId
       };
-      console.log("Creating user with request:", requestBody);
-      console.log("API URL:", API_URL);
+      console.log("Create user request body:", requestBody);
+      
       const response = await api.post('/api/users/create', requestBody);
       console.log("Create user response:", response.data);
       return response.data;
