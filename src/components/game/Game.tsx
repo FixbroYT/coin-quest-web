@@ -1,6 +1,7 @@
 
 import { useEffect } from "react";
 import { useGameContext } from "@/context/GameContext";
+import { useTelegram } from "@/hooks/useTelegram";
 import CoinButton from "./CoinButton";
 import GameHeader from "./GameHeader";
 import BottomPanel from "./BottomPanel";
@@ -33,18 +34,19 @@ declare global {
 
 const Game = () => {
   const { gameState, initializeUser } = useGameContext();
+  const { telegramId } = useTelegram();
   
   const currentLocationName = gameState.player?.location || "";
   const currentLocation = gameState.locations && Array.isArray(gameState.locations) ? 
     gameState.locations.find(location => location.name === currentLocationName) : null;
   
-  // Initialize user only once when component mounts
+  // Initialize user only once when component mounts and telegramId is available
   useEffect(() => {
-    console.log("Game component mounted, initializing user");
-    
-    // Initialize with dev ID only once
-    initializeUser(12345);
-  }, []); // Empty dependency array ensures this runs only once
+    if (telegramId) {
+      console.log("Game component initializing user with Telegram ID:", telegramId);
+      initializeUser(telegramId);
+    }
+  }, [telegramId, initializeUser]); // Only run when telegramId changes or on mount
   
   // Get background class based on location name
   const getBackgroundClass = (locationName?: string) => {
