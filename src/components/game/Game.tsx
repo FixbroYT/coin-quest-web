@@ -61,6 +61,8 @@ const Game = () => {
         return "bg-gradient-to-br from-blue-300 to-blue-500";
       case 'mountain':
         return "bg-gradient-to-br from-stone-200 to-stone-400";
+      case 'farm':
+        return "bg-gradient-to-br from-amber-100 to-amber-300";
       default:
         return "bg-gradient-to-br from-blue-100 to-blue-200";
     }
