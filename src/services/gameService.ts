@@ -4,6 +4,7 @@ import { Player, Upgrade, Location } from "@/types/game";
 
 // Load user data
 export const loadUserData = async (tgId: number): Promise<Player | null> => {
+  console.log("Loading user data for:", tgId);
   return await apiService.getUserData(tgId);
 };
 

@@ -2,7 +2,7 @@
 import axios from 'axios';
 
 // Define the API base URL
-const API_URL = '';
+const API_URL = window.location.origin;
 
 // Create axios instance
 const api = axios.create({
@@ -17,7 +17,8 @@ export const apiService = {
   // Get user data by Telegram ID
   getUserData: async (tgId: number) => {
     try {
-      const response = await api.get(`/users/${tgId}`);
+      const response = await api.get(`/api/users/${tgId}`);
+      console.log("getUserData response:", response.data);
       return response.data;
     } catch (error) {
       console.error('Error fetching user data:', error);
@@ -28,7 +29,7 @@ export const apiService = {
   // Get all available upgrades
   getUpgrades: async () => {
     try {
-      const response = await api.get('/upgrades');
+      const response = await api.get('/api/upgrades');
       return response.data;
     } catch (error) {
       console.error('Error fetching upgrades:', error);
@@ -39,7 +40,7 @@ export const apiService = {
   // Buy an upgrade for a user
   buyUpgrade: async (tgId: number, upgradeId: number) => {
     try {
-      const response = await api.post(`/users/${tgId}/buy_upgrade/${upgradeId}`);
+      const response = await api.post(`/api/users/${tgId}/buy_upgrade/${upgradeId}`);
       return response.data;
     } catch (error) {
       console.error('Error buying upgrade:', error);
@@ -50,7 +51,7 @@ export const apiService = {
   // Get all available locations
   getLocations: async () => {
     try {
-      const response = await api.get('/locations');
+      const response = await api.get('/api/locations');
       return response.data;
     } catch (error) {
       console.error('Error fetching locations:', error);
@@ -61,7 +62,7 @@ export const apiService = {
   // Buy a location for a user
   buyLocation: async (tgId: number, locationId: number) => {
     try {
-      const response = await api.post(`/users/${tgId}/buy_location/${locationId}`);
+      const response = await api.post(`/api/users/${tgId}/buy_location/${locationId}`);
       return response.data;
     } catch (error) {
       console.error('Error buying location:', error);
@@ -72,7 +73,7 @@ export const apiService = {
   // Set current location for a user
   setLocation: async (tgId: number, locationId: number) => {
     try {
-      const response = await api.post(`/users/${tgId}/set_location/${locationId}`);
+      const response = await api.post(`/api/users/${tgId}/set_location/${locationId}`);
       return response.data;
     } catch (error) {
       console.error('Error setting location:', error);
@@ -88,11 +89,13 @@ export const apiService = {
         tg_id: tgId
       };
       console.log("Creating user with request:", requestBody);
+      console.log("API URL:", API_URL);
       const response = await api.post('/api/users/create', requestBody);
       console.log("Create user response:", response.data);
       return response.data;
     } catch (error) {
       console.error('Error creating user:', error);
+      console.error('Error details:', error.response?.data || error.message);
       return null;
     }
   },
@@ -100,7 +103,7 @@ export const apiService = {
   // Add balance to user
   addBalance: async (tgId: number, coins: number) => {
     try {
-      const response = await api.post(`/api/users/${tgId}/balance/add`);
+      const response = await api.post(`/api/users/${tgId}/balance/add`, { amount: coins });
       return response.data;
     } catch (error) {
       console.error('Error adding balance:', error);
@@ -111,7 +114,7 @@ export const apiService = {
   // Get user's current income
   getUserIncome: async (tgId: number) => {
     try {
-      const response = await api.get(`/users/${tgId}/income`);
+      const response = await api.get(`/api/users/${tgId}/income`);
       return response.data;
     } catch (error) {
       console.error('Error getting user income:', error);

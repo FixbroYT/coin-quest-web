@@ -32,7 +32,7 @@ declare global {
 }
 
 const Game = () => {
-  const { gameState } = useGameContext();
+  const { gameState, initializeUser } = useGameContext();
   
   const currentLocationName = gameState.player?.location || "";
   const currentLocation = gameState.locations.find(
@@ -52,11 +52,26 @@ const Game = () => {
       const initDataUnsafe = tg.initDataUnsafe;
       console.log("Telegram User in Game component:", initDataUnsafe?.user);
       
+      // Try to manually initialize if no player data
+      if (!gameState.player && initDataUnsafe?.user?.id) {
+        console.log("Manual initialization with ID:", initDataUnsafe.user.id);
+        initializeUser(initDataUnsafe.user.id);
+      } else if (!gameState.player && process.env.NODE_ENV === 'development') {
+        console.log("Manual initialization with dev ID in Game component");
+        initializeUser(12345); // Development ID
+      }
+      
       console.log("Telegram WebApp initialized");
     } else {
       console.log("Running outside of Telegram WebApp");
+      
+      // For development, try manual initialization if no player data
+      if (!gameState.player && process.env.NODE_ENV === 'development') {
+        console.log("Manual initialization with dev ID in Game component");
+        initializeUser(12345); // Development ID
+      }
     }
-  }, []);
+  }, [gameState.player, initializeUser]);
   
   // Get background class based on location name
   const getBackgroundClass = (locationName?: string) => {
