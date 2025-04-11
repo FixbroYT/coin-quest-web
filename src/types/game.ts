@@ -45,5 +45,5 @@ export interface GameContextProps {
   toggleBottomPanel: () => void;
   setActiveTab: (tab: "upgrades" | "locations") => void;
   initializeUser: (tgId: number) => Promise<void>;
-  getPlayerIncome: (tgId: number) => Promise<void>;
+  getPlayerIncome: (tgId: number) => Promise<{income: number} | null>;
 }
