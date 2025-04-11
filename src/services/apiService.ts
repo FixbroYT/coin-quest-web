@@ -12,6 +12,10 @@ const api = axios.create({
   }
 });
 
+// Simple cache for API responses
+const responseCache = new Map();
+const CACHE_TTL = 60000; // 1 minute in milliseconds
+
 // Add request interceptor for logging
 api.interceptors.request.use(request => {
   console.log('API Request:', {
@@ -44,12 +48,58 @@ api.interceptors.response.use(
   }
 );
 
+// Helper for cached GET requests
+const cachedGet = async (url) => {
+  const cacheKey = url;
+  const now = Date.now();
+  
+  // Check if we have a valid cached response
+  if (responseCache.has(cacheKey)) {
+    const { data, timestamp } = responseCache.get(cacheKey);
+    // Use cache if it's less than TTL old
+    if (now - timestamp < CACHE_TTL) {
+      console.log(`Using cached response for: ${url}`);
+      return data;
+    }
+  }
+  
+  // No valid cache, make the request
+  try {
+    const response = await api.get(url);
+    // Store in cache
+    responseCache.set(cacheKey, {
+      data: response.data,
+      timestamp: now
+    });
+    return response.data;
+  } catch (error) {
+    console.error(`Error fetching ${url}:`, error);
+    throw error;
+  }
+};
+
+// Clear cache for a specific endpoint or user
+const clearCache = (pattern) => {
+  if (!pattern) {
+    responseCache.clear();
+    return;
+  }
+  
+  // Clear specific cache entries that match the pattern
+  for (const key of responseCache.keys()) {
+    if (key.includes(pattern)) {
+      responseCache.delete(key);
+    }
+  }
+};
+
 // API functions
 export const apiService = {
   // Get user data by Telegram ID
   getUserData: async (tgId: number) => {
     try {
       console.log(`Fetching user data for ID: ${tgId}`);
+      // This shouldn't be cached as it changes frequently
       const response = await api.get(`/users/${tgId}`);
       console.log("getUserData response:", response.data);
       return response.data;
@@ -59,12 +109,11 @@ export const apiService = {
     }
   },
   
-  // Get all available upgrades
+  // Get all available upgrades - can be cached
   getUpgrades: async () => {
     try {
       console.log("Fetching all upgrades");
-      const response = await api.get('/upgrades');
-      return response.data;
+      return await cachedGet('/upgrades');
     } catch (error) {
       console.error('Error fetching upgrades:', error);
       return [];
@@ -75,6 +124,8 @@ export const apiService = {
   buyUpgrade: async (tgId: number, upgradeId: number) => {
     try {
       const response = await api.post(`/users/${tgId}/buy_upgrade/${upgradeId}`);
+      // Clear user-specific cache since data has changed
+      clearCache(`/users/${tgId}`);
       return response.data;
     } catch (error) {
       console.error('Error buying upgrade:', error);
@@ -82,12 +133,11 @@ export const apiService = {
     }
   },
   
-  // Get all available locations
+  // Get all available locations - can be cached
   getLocations: async () => {
     try {
       console.log("Fetching all locations");
-      const response = await api.get('/locations');
-      return response.data;
+      return await cachedGet('/locations');
     } catch (error) {
       console.error('Error fetching locations:', error);
       return [];
@@ -98,6 +148,8 @@ export const apiService = {
   buyLocation: async (tgId: number, locationId: number) => {
     try {
       const response = await api.post(`/users/${tgId}/buy_location/${locationId}`);
+      // Clear user-specific cache since data has changed
+      clearCache(`/users/${tgId}`);
       return response.data;
     } catch (error) {
       console.error('Error buying location:', error);
@@ -109,6 +161,8 @@ export const apiService = {
   setLocation: async (tgId: number, locationId: number) => {
     try {
       const response = await api.post(`/users/${tgId}/set_location/${locationId}`);
+      // Clear user-specific cache since data has changed
+      clearCache(`/users/${tgId}`);
       return response.data;
     } catch (error) {
       console.error('Error setting location:', error);
@@ -139,6 +193,8 @@ export const apiService = {
   addBalance: async (tgId: number, coins: number) => {
     try {
       const response = await api.post(`/users/${tgId}/balance/add`, { amount: coins });
+      // Clear user-specific cache since data has changed
+      clearCache(`/users/${tgId}`);
       return response.data;
     } catch (error) {
       console.error('Error adding balance:', error);
@@ -155,5 +211,8 @@ export const apiService = {
       console.error('Error getting user income:', error);
       return null;
     }
-  }
+  },
+  
+  // Clear cache manually if needed
+  clearCache
 };

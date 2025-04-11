@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 
 interface TelegramUser {
   id: number;
@@ -12,11 +12,11 @@ export const useTelegram = () => {
   const [telegramId, setTelegramId] = useState<number | null>(null);
 
   useEffect(() => {
-    // Always use development ID for testing
+    // Set the ID only once when the hook mounts
     const devId = 12345;
     console.log("Using development Telegram ID:", devId);
     setTelegramId(devId);
-  }, []);
+  }, []); // Empty dependency array ensures this runs only once
 
   return { telegramId };
 };

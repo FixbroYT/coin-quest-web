@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useTelegram } from "@/hooks/useTelegram";
 import { GameState, GameContextProps } from "@/types/game";
@@ -28,80 +28,100 @@ const GameContext = createContext<GameContextProps | undefined>(undefined);
 
 export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [gameState, setGameState] = useState<GameState>(initialGameState);
+  const [isInitialized, setIsInitialized] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const { toast } = useToast();
   const { telegramId } = useTelegram();
   
   // Initialize user when telegramId is available
   useEffect(() => {
-    if (telegramId) {
+    if (telegramId && !isInitialized && !isLoading) {
       console.log("Initializing user with telegramId:", telegramId);
       initializeUser(telegramId);
     }
-  }, [telegramId]);
+  }, [telegramId, isInitialized, isLoading]);
   
-  // Update income when player or location changes
-  useEffect(() => {
-    if (telegramId && gameState.player) {
-      getPlayerIncome(telegramId);
-    }
-  }, [telegramId, gameState.player?.location]);
-  
-  // Load game data
-  const initializeUser = async (tgId: number) => {
+  // Memoized initialization function to prevent re-creation on each render
+  const initializeUser = useCallback(async (tgId: number) => {
+    if (isLoading || isInitialized) return;
+    
     console.log("Starting user initialization for ID:", tgId);
-    // Try to get user
-    let userData = await loadUserData(tgId);
-    console.log("Loaded user data:", userData);
+    setIsLoading(true);
     
-    // If user doesn't exist, create a new one
-    if (!userData) {
-      console.log("No user data found, creating new user");
-      userData = await createNewUser(tgId);
+    try {
+      // Try to get user
+      let userData = await loadUserData(tgId);
+      console.log("Loaded user data:", userData);
+      
+      // If user doesn't exist, create a new one
       if (!userData) {
-        console.error("Failed to create new user");
-        toast({
-          title: "Error",
-          description: "Failed to initialize user",
-          variant: "destructive"
-        });
-        return;
+        console.log("No user data found, creating new user");
+        userData = await createNewUser(tgId);
+        if (!userData) {
+          console.error("Failed to create new user");
+          toast({
+            title: "Error",
+            description: "Failed to initialize user",
+            variant: "destructive"
+          });
+          setIsLoading(false);
+          return;
+        }
+        console.log("New user created:", userData);
+      } else {
+        console.log("Existing user found:", userData);
       }
-      console.log("New user created:", userData);
-    } else {
-      console.log("Existing user found:", userData);
+      
+      // Load upgrades and locations
+      const [upgrades, locations, income] = await Promise.all([
+        loadUpgrades(),
+        loadLocations(),
+        getUserIncome(tgId)
+      ]);
+      
+      console.log("Loaded upgrades:", upgrades);
+      console.log("Loaded locations:", locations);
+      console.log("Loaded income:", income);
+      
+      // Update game state
+      setGameState({
+        player: userData,
+        upgrades: upgrades || [],
+        locations: locations || [],
+        isBottomPanelOpen: false,
+        activeTab: "upgrades",
+        income: income?.income || 1
+      });
+      
+      setIsInitialized(true);
+    } catch (error) {
+      console.error("Initialization error:", error);
+      toast({
+        title: "Error",
+        description: "Failed to initialize game data",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
     }
-    
-    // Load upgrades and locations
-    const upgrades = await loadUpgrades();
-    const locations = await loadLocations();
-    console.log("Loaded upgrades:", upgrades);
-    console.log("Loaded locations:", locations);
-    
-    // Update game state
-    setGameState({
-      ...gameState,
-      player: userData,
-      upgrades: upgrades || [],
-      locations: locations || []
-    });
-    
-    // Get player income
-    await getPlayerIncome(tgId);
-  };
+  }, [toast, isLoading, isInitialized]);
   
-  // Get player's current income
-  const getPlayerIncome = async (tgId: number) => {
+  // Get player's current income - only call when necessary
+  const getPlayerIncome = useCallback(async (tgId: number) => {
     if (!tgId) return;
     
-    const income = await getUserIncome(tgId);
-    console.log("Player income:", income);
-    if (income !== null) {
+    const incomeData = await getUserIncome(tgId);
+    console.log("Player income:", incomeData);
+    
+    if (incomeData !== null) {
       setGameState(prevState => ({
         ...prevState,
-        income
+        income: incomeData?.income || prevState.income
       }));
     }
-  };
+    
+    return incomeData;
+  }, []);
   
   // Add coins to user balance
   const addCoins = async (amount: number) => {
@@ -119,21 +139,22 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
   
-  // Purchase an upgrade
+  // Purchase an upgrade - only update data when necessary
   const purchaseUpgrade = async (upgradeId: number) => {
     if (!gameState.player || !telegramId) return;
     
     const result = await buyUpgrade(telegramId, upgradeId);
     if (result && result.success) {
       // Update player data with the new coins balance and upgrades
-      const userData = await loadUserData(telegramId);
-      
-      // Also update the player's income
-      await getPlayerIncome(telegramId);
+      const [userData, incomeData] = await Promise.all([
+        loadUserData(telegramId),
+        getUserIncome(telegramId)
+      ]);
       
       setGameState(prevState => ({
         ...prevState,
-        player: userData
+        player: userData,
+        income: incomeData?.income || prevState.income
       }));
       
       toast({
@@ -149,7 +170,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
   
-  // Unlock a location
+  // Unlock a location - with optimized data loading
   const unlockLocation = async (locationId: number) => {
     if (!gameState.player || !telegramId) return;
     
@@ -186,26 +207,27 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
   
-  // Set current location
+  // Set current location - with optimized data loading
   const setCurrentLocation = async (locationId: number) => {
     if (!gameState.player || !telegramId) return;
     
     const result = await setUserLocation(telegramId, locationId);
     if (result && result.success) {
-      // Refresh user data
-      const userData = await loadUserData(telegramId);
+      // Fetch updated data in parallel
+      const [userData, incomeData] = await Promise.all([
+        loadUserData(telegramId),
+        getUserIncome(telegramId)
+      ]);
       
       setGameState(prevState => ({
         ...prevState,
-        player: userData
+        player: userData,
+        income: incomeData?.income || prevState.income
       }));
-      
-      // Update income after location change
-      await getPlayerIncome(telegramId);
     }
   };
   
-  // Toggle bottom panel
+  // Toggle bottom panel - pure UI state, no API calls
   const toggleBottomPanel = () => {
     setGameState(prevState => ({
       ...prevState,
@@ -213,7 +235,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }));
   };
   
-  // Set active tab
+  // Set active tab - pure UI state, no API calls
   const setActiveTab = (tab: "upgrades" | "locations") => {
     setGameState(prevState => ({
       ...prevState,

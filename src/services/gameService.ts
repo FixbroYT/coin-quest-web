@@ -62,7 +62,7 @@ export const createNewUser = async (tgId: number): Promise<Player | null> => {
 };
 
 // Get user's current income
-export const getUserIncome = async (tgId: number): Promise<number | null> => {
+export const getUserIncome = async (tgId: number): Promise<{income: number} | null> => {
   const response = await apiService.getUserIncome(tgId);
-  return response ? response.income : null;
+  return response;
 };

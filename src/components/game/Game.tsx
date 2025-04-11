@@ -38,17 +38,13 @@ const Game = () => {
   const currentLocation = gameState.locations && Array.isArray(gameState.locations) ? 
     gameState.locations.find(location => location.name === currentLocationName) : null;
   
-  // Initialize user regardless of Telegram WebApp availability
+  // Initialize user only once when component mounts
   useEffect(() => {
     console.log("Game component mounted, initializing user");
     
-    // Always try to initialize with development ID
-    console.log("Initializing with dev ID in Game component");
+    // Initialize with dev ID only once
     initializeUser(12345);
-    
-    // Log current gameState
-    console.log("Current gameState:", gameState);
-  }, [initializeUser]);
+  }, []); // Empty dependency array ensures this runs only once
   
   // Get background class based on location name
   const getBackgroundClass = (locationName?: string) => {
