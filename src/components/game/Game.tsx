@@ -1,4 +1,3 @@
-
 import { useEffect } from "react";
 import { useGameContext } from "@/context/GameContext";
 import { useTelegram } from "@/hooks/useTelegram";
@@ -26,7 +25,8 @@ declare global {
             first_name?: string;
             last_name?: string;
           }
-        }
+        };
+        initData?: string;
       };
     };
   }
@@ -45,6 +45,8 @@ const Game = () => {
     if (telegramId) {
       console.log("Game component initializing user with Telegram ID:", telegramId);
       initializeUser(telegramId);
+    } else {
+      console.log("Waiting for telegramId to be available");
     }
   }, [telegramId, initializeUser]); // Only run when telegramId changes or on mount
   
