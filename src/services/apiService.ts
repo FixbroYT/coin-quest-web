@@ -1,8 +1,7 @@
-
 import axios from 'axios';
 
-// Define the API base URL
-const API_URL = import.meta.env.DEV ? window.location.origin : window.location.origin;
+// Define the API base URL using environment variable with fallback
+const API_URL = import.meta.env.VITE_API_URL || window.location.origin;
 
 // Create axios instance with detailed logging
 const api = axios.create({
