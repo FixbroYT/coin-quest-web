@@ -1,7 +1,8 @@
+
 import axios from 'axios';
 
-// Define the API base URL using environment variable with fallback
-const API_URL = import.meta.env.VITE_API_URL || window.location.origin;
+// Define the API base URL directly
+const API_URL = 'https://apple-combat-backend-production.up.railway.app';
 
 // Create axios instance with detailed logging
 const api = axios.create({
