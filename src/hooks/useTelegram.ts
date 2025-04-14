@@ -12,32 +12,14 @@ export const useTelegram = () => {
   const [telegramId, setTelegramId] = useState<number | null>(null);
 
   useEffect(() => {
-    // Try to get Telegram user data
+    // Simplified function to get Telegram user ID
     const getTelegramUser = () => {
-      // First, check if we are in the Telegram WebApp environment
-      if (window.Telegram?.WebApp) {
-        console.log("Telegram WebApp detected");
-        
-        // Log the entire initDataUnsafe object to see what's available
-        console.log("initData:", window.Telegram.WebApp.initData);
-        console.log("initDataUnsafe:", window.Telegram.WebApp.initDataUnsafe);
-        
-        // Prioritize initData for validation
-        if (window.Telegram.WebApp.initData) {
-          console.log("Using initData for user identification");
-        }
-        
-        // Try to get the user data from initDataUnsafe
-        if (window.Telegram.WebApp.initDataUnsafe?.user) {
-          const user = window.Telegram.WebApp.initDataUnsafe.user;
-          console.log("Got Telegram user:", user);
-          return user.id;
-        } else {
-          console.log("User data not found in initDataUnsafe");
-        }
-      } else {
-        console.log("Telegram WebApp not detected");
-      }
+      // Check if we're in the Telegram WebApp environment
+      if (window.Telegram?.WebApp?.initDataUnsafe?.user) {
+        const user = window.Telegram.WebApp.initDataUnsafe.user;
+        console.log("Got Telegram user:", user);
+        return user.id;
+      } 
       
       // Fallback to development ID
       const devId = 12345;
