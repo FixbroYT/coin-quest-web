@@ -16,7 +16,7 @@ export const useTelegram = () => {
     const getTelegramUser = () => {
       // Check if we're in the Telegram WebApp environment
       if (window.Telegram?.WebApp?.initDataUnsafe?.user) {
-        const user = window.Telegram.WebApp.initDataUnsafe.user;
+        const user = window.Telegram.WebApp.initDataUnsafe?.user;
         console.log("Got Telegram user:", user);
         return user.id;
       }
