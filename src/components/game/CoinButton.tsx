@@ -1,5 +1,4 @@
-
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useGameContext } from "@/context/GameContext";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -11,24 +10,48 @@ const CoinButton = () => {
   const clickTimeoutRef = useRef<boolean>(false);
   const clickDelay = 150; // 0.15 seconds delay between clicks - more responsive but still protects server
   
+  useEffect(() => {
+    if (!gameState.player) return;
+    
+    const passiveIncomeInterval = setInterval(() => {
+      const passiveUpgrade = gameState.player.upgrades.find(upgrade => upgrade.name === "Passive income");
+      
+      if (passiveUpgrade && passiveUpgrade.count > 0) {
+        const passiveAmount = passiveUpgrade.count * (gameState.income || 1);
+        console.log(`Adding passive income: ${passiveAmount} coins`);
+        
+        addCoins(passiveAmount);
+        
+        const newEffect = {
+          id: Date.now(),
+          x: 75,
+          y: 75
+        };
+        
+        setClickEffects(prev => [...prev, newEffect]);
+        
+        setTimeout(() => {
+          setClickEffects(prev => prev.filter(effect => effect.id !== newEffect.id));
+        }, 1000);
+      }
+    }, 5000);
+    
+    return () => clearInterval(passiveIncomeInterval);
+  }, [gameState.player, gameState.income, addCoins]);
+  
   const handleCoinClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     if (!gameState.player || clickTimeoutRef.current) return;
     
-    // Set click timeout to prevent rapid clicking
     clickTimeoutRef.current = true;
     
-    // Get click position relative to the button
     const buttonRect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - buttonRect.left;
     const y = e.clientY - buttonRect.top;
     
-    // Use the income from the API
     const income = gameState.income || 1;
     
-    // Add coins
     addCoins(income);
     
-    // Add visual click effect
     const newEffect = {
       id: Date.now(),
       x,
@@ -37,12 +60,10 @@ const CoinButton = () => {
     
     setClickEffects(prev => [...prev, newEffect]);
     
-    // Remove effect after animation completes
     setTimeout(() => {
       setClickEffects(prev => prev.filter(effect => effect.id !== newEffect.id));
     }, 1000);
     
-    // Reset click timeout after delay
     setTimeout(() => {
       clickTimeoutRef.current = false;
     }, clickDelay);
@@ -64,7 +85,6 @@ const CoinButton = () => {
         </div>
       </Button>
       
-      {/* Click effects */}
       {clickEffects.map(effect => (
         <div 
           key={effect.id}
