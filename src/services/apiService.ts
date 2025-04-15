@@ -120,6 +120,16 @@ export const apiService = {
     }
   },
   
+  // Get upgrade cost for a specific user and upgrade
+  getUpgradeCost: async (tgId: number, upgradeId: number) => {
+    try {
+      return await cachedGet(`/users/${tgId}/upgrades/${upgradeId}`);
+    } catch (error) {
+      console.error('Error fetching upgrade cost:', error);
+      return null;
+    }
+  },
+  
   // Buy an upgrade for a user
   buyUpgrade: async (tgId: number, upgradeId: number) => {
     try {
@@ -141,6 +151,16 @@ export const apiService = {
     } catch (error) {
       console.error('Error fetching locations:', error);
       return [];
+    }
+  },
+  
+  // Get location cost
+  getLocationCost: async (locationId: number) => {
+    try {
+      return await cachedGet(`/locations/${locationId}`);
+    } catch (error) {
+      console.error('Error fetching location cost:', error);
+      return null;
     }
   },
   

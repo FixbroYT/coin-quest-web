@@ -28,10 +28,12 @@ export const useTelegram = () => {
     };
 
     // Set the ID only once when the hook mounts
-    const userId = getTelegramUser();
-    console.log("Setting telegramId to:", userId);
-    setTelegramId(userId);
-  }, []); // Empty dependency array ensures this runs only once
+    if (!telegramId) {
+      const userId = getTelegramUser();
+      console.log("Setting telegramId to:", userId);
+      setTelegramId(userId);
+    }
+  }, [telegramId]); // Only run if telegramId is null or changes
 
   return { telegramId };
 };

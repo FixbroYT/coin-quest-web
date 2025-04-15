@@ -1,23 +1,62 @@
 
+import { useState, useEffect } from "react";
 import { useGameContext } from "@/context/GameContext";
+import { useTelegram } from "@/hooks/useTelegram";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Zap, MousePointerClick, Coins } from "lucide-react";
+import { getUpgradeCost } from "@/services/gameService";
 
 const UpgradesTab = () => {
   const { gameState, purchaseUpgrade } = useGameContext();
+  const { telegramId } = useTelegram();
   const { upgrades, player } = gameState;
+  const [upgradeCosts, setUpgradeCosts] = useState<{[key: number]: number}>({});
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  
+  // Fetch upgrade costs when the tab is shown and after each upgrade purchase
+  useEffect(() => {
+    const fetchUpgradeCosts = async () => {
+      if (!telegramId || !upgrades.length) return;
+      
+      setIsLoading(true);
+      const costs: {[key: number]: number} = {};
+      
+      for (const upgrade of upgrades) {
+        const cost = await getUpgradeCost(telegramId, upgrade.id);
+        if (cost !== null) {
+          costs[upgrade.id] = cost;
+        } else {
+          costs[upgrade.id] = upgrade.cost; // Use default cost if API fails
+        }
+      }
+      
+      setUpgradeCosts(costs);
+      setIsLoading(false);
+    };
+    
+    fetchUpgradeCosts();
+  }, [telegramId, upgrades, player?.upgrades]);
   
   if (!player) {
     return <div>Loading upgrades...</div>;
   }
   
   const getUpgradeIcon = (upgradeName: string) => {
-    if (upgradeName.toLowerCase().includes('double')) {
+    if (upgradeName.toLowerCase().includes('double') || upgradeName.toLowerCase().includes('income')) {
       return <Zap className="w-4 h-4" />;
     }
     return <MousePointerClick className="w-4 h-4" />;
+  };
+  
+  const getUpgradeCostForDisplay = (upgradeId: number) => {
+    return upgradeCosts[upgradeId] || 0;
+  };
+  
+  const handlePurchaseUpgrade = async (upgradeId: number) => {
+    await purchaseUpgrade(upgradeId);
+    // Costs will be updated automatically by the useEffect
   };
   
   return (
@@ -30,7 +69,8 @@ const UpgradesTab = () => {
           // Find player's upgrade level (count) for this upgrade
           const playerUpgrade = player.upgrades.find(u => u.id === upgrade.id);
           const upgradeLevel = playerUpgrade ? playerUpgrade.count : 0;
-          const canAfford = player.coins >= upgrade.cost;
+          const upgradeCost = getUpgradeCostForDisplay(upgrade.id);
+          const canAfford = player.coins >= upgradeCost;
           
           return (
             <Card key={upgrade.id} className={`${canAfford ? "" : "opacity-70"}`}>
@@ -42,7 +82,7 @@ const UpgradesTab = () => {
                   </CardTitle>
                   <div className="text-amber-500 font-medium text-sm flex items-center gap-1">
                     <Coins className="w-3 h-3" />
-                    {upgrade.cost}
+                    {isLoading ? "..." : upgradeCost}
                   </div>
                 </div>
                 <CardDescription>{upgrade.description}</CardDescription>
@@ -61,8 +101,8 @@ const UpgradesTab = () => {
               </CardContent>
               <CardFooter className="pt-0">
                 <Button 
-                  onClick={() => purchaseUpgrade(upgrade.id)} 
-                  disabled={!canAfford}
+                  onClick={() => handlePurchaseUpgrade(upgrade.id)} 
+                  disabled={!canAfford || isLoading}
                   className="w-full"
                   variant={canAfford ? "default" : "outline"}
                 >

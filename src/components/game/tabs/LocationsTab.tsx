@@ -1,13 +1,47 @@
 
+import { useState, useEffect } from "react";
 import { useGameContext } from "@/context/GameContext";
+import { useTelegram } from "@/hooks/useTelegram";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Coins, MapPin, Check } from "lucide-react";
+import { getLocationCost } from "@/services/gameService";
 
 const LocationsTab = () => {
   const { gameState, unlockLocation } = useGameContext();
   const { locations, player } = gameState;
+  const [locationCosts, setLocationCosts] = useState<{[key: number]: number}>({});
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  
+  // Load location costs
+  useEffect(() => {
+    const fetchLocationCosts = async () => {
+      if (!locations.length) return;
+      
+      setIsLoading(true);
+      const costs: {[key: number]: number} = {};
+      
+      for (const location of locations) {
+        if (location.id === 1) {
+          // First location is always free
+          costs[location.id] = 0;
+        } else {
+          const cost = await getLocationCost(location.id);
+          if (cost !== null) {
+            costs[location.id] = cost;
+          } else {
+            costs[location.id] = 100 * location.id; // Fallback calculation
+          }
+        }
+      }
+      
+      setLocationCosts(costs);
+      setIsLoading(false);
+    };
+    
+    fetchLocationCosts();
+  }, [locations]);
   
   if (!player) {
     return <div>Loading locations...</div>;
@@ -27,6 +61,8 @@ const LocationsTab = () => {
         return "bg-gradient-to-br from-blue-300 to-blue-500";
       case 'mountain':
         return "bg-gradient-to-br from-stone-200 to-stone-400";
+      case 'farm':
+        return "bg-gradient-to-br from-amber-100 to-amber-300";
       default:
         return "bg-gradient-to-br from-blue-100 to-blue-200";
     }
@@ -42,8 +78,9 @@ const LocationsTab = () => {
           const isUnlocked = isLocationUnlocked(location.name);
           const isCurrent = player.location === location.name;
           const background = getLocationBackground(location.name);
-          const cost = isUnlocked ? 0 : 100 * location.id; // Calculate cost based on location id as example
+          const cost = locationCosts[location.id] || 0;
           const canAfford = player.coins >= cost;
+          const isFirstLocation = location.id === 1;
           
           return (
             <Card 
@@ -62,11 +99,16 @@ const LocationsTab = () => {
                       </Badge>
                     )}
                   </CardTitle>
-                  {!isUnlocked && (
+                  {!isUnlocked && !isFirstLocation && (
                     <div className="text-amber-500 font-medium text-sm flex items-center gap-1">
                       <Coins className="w-3 h-3" />
-                      {cost}
+                      {isLoading ? "..." : cost}
                     </div>
+                  )}
+                  {isFirstLocation && !isUnlocked && (
+                    <Badge variant="secondary" className="text-xs">
+                      Free Starter Location
+                    </Badge>
                   )}
                   {isUnlocked && (
                     <Badge variant="secondary" className="text-xs">
@@ -79,19 +121,21 @@ const LocationsTab = () => {
               </CardHeader>
               <CardContent className="pb-2">
                 <div className="text-sm">
-                  Explore this location to earn more coins!
+                  {isFirstLocation 
+                    ? "Your starting location. A perfect place for beginners!"
+                    : "Explore this location to earn more coins!"}
                 </div>
               </CardContent>
               <CardFooter className="pt-0">
                 <Button 
                   onClick={() => unlockLocation(location.id)} 
-                  disabled={!canAfford && !isUnlocked}
+                  disabled={(!canAfford && !isUnlocked) || isLoading}
                   className="w-full"
-                  variant={isUnlocked ? (isCurrent ? "secondary" : "outline") : (canAfford ? "default" : "outline")}
+                  variant={isUnlocked ? (isCurrent ? "secondary" : "outline") : (canAfford || isFirstLocation ? "default" : "outline")}
                 >
                   {isUnlocked 
                     ? (isCurrent ? "Current Location" : "Travel Here") 
-                    : (canAfford ? "Unlock" : "Not Enough Coins")}
+                    : (isFirstLocation ? "Unlock (Free)" : (canAfford ? "Unlock" : "Not Enough Coins"))}
                 </Button>
               </CardFooter>
             </Card>

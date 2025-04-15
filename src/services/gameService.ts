@@ -18,6 +18,18 @@ export const loadLocations = async (): Promise<Location[]> => {
   return await apiService.getLocations();
 };
 
+// Get upgrade cost
+export const getUpgradeCost = async (tgId: number, upgradeId: number): Promise<number | null> => {
+  const response = await apiService.getUpgradeCost(tgId, upgradeId);
+  return response?.upgrade_cost || null;
+};
+
+// Get location cost
+export const getLocationCost = async (locationId: number): Promise<number | null> => {
+  const response = await apiService.getLocationCost(locationId);
+  return response?.location_cost || null;
+};
+
 // Add coins to user balance
 export const addCoinsToBalance = async (tgId: number, amount: number): Promise<number | null> => {
   const response = await apiService.addBalance(tgId, amount);
