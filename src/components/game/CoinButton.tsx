@@ -8,7 +8,7 @@ const CoinButton = () => {
   const { gameState, addCoins } = useGameContext();
   const [clickEffects, setClickEffects] = useState<{ id: number; x: number; y: number }[]>([]);
   const clickTimeoutRef = useRef<boolean>(false);
-  const clickDelay = 200; // milliseconds between clicks
+  const clickDelay = 300; // 0.3 seconds delay between clicks
   
   const handleCoinClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     if (!gameState.player || clickTimeoutRef.current) return;
