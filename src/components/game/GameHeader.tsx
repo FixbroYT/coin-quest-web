@@ -5,9 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import PlayerProfile from "./PlayerProfile";
 import { useEffect, useState } from "react";
+import { loadUserData } from "@/services/gameService";
 
 const GameHeader = () => {
-  const { gameState, initializeUser } = useGameContext();
+  const { gameState } = useGameContext();
   const [balance, setBalance] = useState<number>(0);
   
   // Update balance from state whenever it changes
@@ -17,17 +18,18 @@ const GameHeader = () => {
     }
   }, [gameState.player]);
   
-  // Set up periodic balance refresh
+  // Set up periodic balance refresh from the server
   useEffect(() => {
     // If no player, don't set up interval
-    if (!gameState.player) return;
+    if (!gameState.player?.tg_id) return;
     
-    // Function to refresh player data
+    // Function to refresh player data directly from server
     const refreshBalance = async () => {
-      if (!gameState.player?.tg_id) return;
-      
       try {
-        await initializeUser(gameState.player.tg_id);
+        const userData = await loadUserData(gameState.player!.tg_id);
+        if (userData) {
+          setBalance(Math.floor(userData.coins));
+        }
       } catch (error) {
         console.error("Failed to refresh balance:", error);
       }
@@ -41,7 +43,7 @@ const GameHeader = () => {
     
     // Clean up interval on component unmount
     return () => clearInterval(intervalId);
-  }, [gameState.player, initializeUser]);
+  }, [gameState.player]);
   
   return (
     <div className="fixed top-0 inset-x-0 z-10 bg-gradient-to-b from-background/80 to-background/0 backdrop-blur-sm py-2">

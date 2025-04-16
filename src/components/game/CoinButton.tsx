@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect } from "react";
+
+import { useState, useRef } from "react";
 import { useGameContext } from "@/context/GameContext";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -9,35 +10,6 @@ const CoinButton = () => {
   const [clickEffects, setClickEffects] = useState<{ id: number; x: number; y: number }[]>([]);
   const clickTimeoutRef = useRef<boolean>(false);
   const clickDelay = 150; // 0.15 seconds delay between clicks - more responsive but still protects server
-  
-  useEffect(() => {
-    if (!gameState.player) return;
-    
-    const passiveIncomeInterval = setInterval(() => {
-      const passiveUpgrade = gameState.player.upgrades.find(upgrade => upgrade.name === "Passive income");
-      
-      if (passiveUpgrade && passiveUpgrade.count > 0) {
-        const passiveAmount = passiveUpgrade.count * (gameState.income || 1);
-        console.log(`Adding passive income: ${passiveAmount} coins`);
-        
-        addCoins(passiveAmount);
-        
-        const newEffect = {
-          id: Date.now(),
-          x: 75,
-          y: 75
-        };
-        
-        setClickEffects(prev => [...prev, newEffect]);
-        
-        setTimeout(() => {
-          setClickEffects(prev => prev.filter(effect => effect.id !== newEffect.id));
-        }, 1000);
-      }
-    }, 5000);
-    
-    return () => clearInterval(passiveIncomeInterval);
-  }, [gameState.player, gameState.income, addCoins]);
   
   const handleCoinClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     if (!gameState.player || clickTimeoutRef.current) return;
